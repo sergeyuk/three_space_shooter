@@ -1,15 +1,10 @@
 var url = require("url");
-var ShipClass = require( "./shared/ship" ).ShipClass;
-var WorldClass = require( "./shared/world" ).WorldClass;
-var ProjectileClass = require( "./shared/projectile" ).ProjectileClass;
-require( "./shared/custom_math" );
-var FlagClass = require( "./shared/flag" ).FlagClass;
 
 function handler (req, res) {
 	if (req.method === "GET" || req.method === "HEAD") {
 		var pathname = url.parse(req.url).pathname;
 		console.log( pathname );
-		if( pathname === '/' ) pathname = '/index.html';
+		if( pathname === '/' ) pathname = '/front_end.html';
 		fs.readFile('.' + pathname, function (err, data) {
 			if (err) {
 				res.writeHead(500);
@@ -22,83 +17,63 @@ function handler (req, res) {
 	}
 }
 
-
-var GAME = {
-	last_user_id : 0,
-	default_spawn_point : {x:0,y:0,z:0},
-	world : new WorldClass()
-};
-
 var app = require('http').createServer(handler)
 var io = require('socket.io').listen(app)
 var fs = require('fs')
 
-console.log("start the stuff....");
-io.set( 'log level', 0 );
+console.log("started front end server...");
+//io.set( 'log level', 0 );
+
+var FRONT_END_SERVER_DATA = {
+	user_id_counter : 0,
+	users_logged_in : {}
+};
 
 io.sockets.on('connection', function (socket) {
-	
-	var this_user_id = GAME.last_user_id++;
-//	socket.set('id', this_user_id);	
-	console.log( "connected one.." );
+	var this_user_id = FRONT_END_SERVER_DATA.user_id_counter++;
+	console.log( "Received connection request from the client" );
 
-	var new_ship = new ShipClass();
-	new_ship.mesh = 1;
-	new_ship.set_position( GAME.default_spawn_point );
-	GAME.world.ships[this_user_id] = new_ship;
 	socket.set('id', this_user_id );
-	socket.emit( "connected", [this_user_id, GAME.world.ships] );
-	socket.broadcast.emit( 'connected', [this_user_id, GAME.world.ships] );	
+	socket.emit( "connected" );
 
-	socket.on( 'ship control on', function(key){ 
-		socket.get( 'id', function( err, user_id ){
-			//console.log( "ship control on. id=" + user_id );
-			var this_ship = GAME.world.ships[user_id];
-			var fwd = this_ship.get_forward();
-			var turn = this_ship.get_turn();
-			if(key == 0 ) this_ship.set_forward( -1 );
-			if(key == 1 ) this_ship.set_turn( 1 );
-			if(key == 2 ) this_ship.set_forward( 1 );
-			if(key == 3 ) this_ship.set_turn( -1 );
-			if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
-				//console.log( '=============BROADCAST================');
-				socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
-			}
-		});
-	});
-
-	socket.on( 'ship control off', function(key){ 
-		socket.get( 'id', function( err, user_id ){
-			var this_ship = GAME.world.ships[user_id];
-			var fwd = this_ship.get_forward();
-			var turn = this_ship.get_turn();
-			if(key == 0 ) this_ship.set_forward( 0 );
-			if(key == 1 ) this_ship.set_turn( 0 );
-			if(key == 2 ) this_ship.set_forward( 0 );
-			if(key == 3 ) this_ship.set_turn( 0 );
-			if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
-				//console.log( '=============BROADCAST================');
-				socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
-			}
-		});
-	});
-
-	socket.on( 'ship shot', function( data ){
-		socket.broadcast.emit( 'ship shoot event', data );
-		GAME.world.add_shot( data[0] );
+	socket.on( 'login request', function( data ){
+		if( data && data[0] ){
+			socket.get( 'id', function( err, user_id ){
+				var user_name = data[0];
+				FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { name: user_name };
+				socket.broadcast.emit( 'new user', user_name );
+				socket.emit( 'login accepted' );
+			});
+		}
+		else{
+			socket.emit( 'login rejected' );
+		}
 	});
 	
 	socket.on('disconnect', function() {
 		socket.get( 'id', function( err, user_id ){
-			delete GAME.world.ships[user_id];
-			console.log( "broadcasting disconnect message. Client id=" + user_id );
-			socket.broadcast.emit( 'disconnected', user_id );
+			var logged_in_users = FRONT_END_SERVER_DATA.users_logged_in;
+			
+			if( logged_in_users.hasOwnProperty( user_id ) ){
+				delete logged_in_users[user_id];			
+				console.log( "broadcasting disconnect message. Client id=" + user_id );
+				socket.broadcast.emit( 'disconnected', user_id );				
+			}
 		});
+	});
+	
+	socket.on( 'chat msg', function( data ) {
+		socket.broadcast.emit( 'chat msg', data );
+	});
+	
+	socket.on( 'join room request', function(){
+		// Not implemented yet
 	});
 });
 
 app.listen(8000);
 
+/*
 var last_time_value = new Date().getTime();
 
 var sync_function = function(){
@@ -115,6 +90,6 @@ var sync_function = function(){
 	}	
 }
 
-process.nextTick(sync_function);
-//setInterval( sync_function, 100 );
+process.nextTick(sync_function);*/
+
 
