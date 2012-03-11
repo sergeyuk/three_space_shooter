@@ -18,21 +18,32 @@
 		<script type="text/javascript" src="js/jquery-ui-1.8.18.custom.min.js"></script>
 	</head>
 	<body>
+		<script src="js/Three.js"></script>
+		<script src="js/Detector.js"></script>
+		<script src="js/RequestAnimationFrame.js"></script>
+		<script src="js/Stats.js"></script>
+		<script src="js/Tween.js"></script>
+		<script src="js/Sparks.js"></script>
+		<script src="js/threex.sparks.js"></script>
+		<script src="js/threex.sparksPlugins.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="code/shared/custom_math.js"></script>
+		<script src="code/shared/ship.js"></script>
+		<script src="code/shared/projectile.js"></script>
+		<script src="code/shared/world.js"></script>
+		<script src="code/shared/flag.js"></script>
+		<!-- <script src="code/client.js"></script> -->
 		
+		<div name='login_page'>
+			<center>
+				<input type="text" name="login_name" id="login_name" />
+				<button id='login_button'>Login</button>
+			</center>	
+		</div>
+		
+		<script>
+			$('button').button();
+		</script>
 	</body>
-	<script src="js/Three.js"></script>
-	<script src="js/Detector.js"></script>
-	<script src="js/RequestAnimationFrame.js"></script>
-	<script src="js/Stats.js"></script>
-	<script src="js/Tween.js"></script>
-	<script src="js/Sparks.js"></script>
-	<script src="js/threex.sparks.js"></script>
-	<script src="js/threex.sparksPlugins.js"></script>
-	<script src="/socket.io/socket.io.js"></script>
-	<script src="code/shared/custom_math.js"></script>
-	<script src="code/shared/ship.js"></script>
-	<script src="code/shared/projectile.js"></script>
-	<script src="code/shared/world.js"></script>
-	<script src="code/shared/flag.js"></script>
-	<!-- <script src="code/client.js"></script> -->
+	
 </html>
