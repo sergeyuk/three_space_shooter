@@ -29,6 +29,23 @@ var FRONT_END_SERVER_DATA = {
 	users_logged_in : {}
 };
 
+var DATABASE = new function(){
+	this.registered_users = {};
+};
+
+DATABASE.get_registered_user = function( user_name ){
+	if( this.registered_users.hasOwnProperty( user_name ) ){
+		return this.registered_users[user_name];
+	}
+	else{
+		return undefined;
+	}
+}
+
+DATABASE.is_user_registered = function( user_name ){
+	return ( this.get_registered_user( user_name ) !== undefined );
+}
+
 io.sockets.on('connection', function (socket) {
 	var this_user_id = FRONT_END_SERVER_DATA.user_id_counter++;
 	console.log( "Received connection request from the client" );
@@ -40,13 +57,18 @@ io.sockets.on('connection', function (socket) {
 		if( data && data[0] ){
 			socket.get( 'id', function( err, user_id ){
 				var user_name = data[0];
-				FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { name: user_name };
-				socket.broadcast.emit( 'new user', user_name );
-				socket.emit( 'login accepted' );
+				if( DATABASE.is_user_registered( user_name ) ){
+					FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { name: user_name };
+					socket.broadcast.emit( 'new user', user_name );
+					socket.emit( 'login accepted', DATABASE.get_registered_user( user_name ) );	
+				}
+				else{
+					socket.emit( 'create new user', user_name );
+				}
 			});
 		}
 		else{
-			socket.emit( 'login rejected' );
+			socket.emit( 'error', 'login rejected' );
 		}
 	});
 	

@@ -1,2 +1,2 @@
-node code/front_end_server.js
+node code/room_server.js
 pause
