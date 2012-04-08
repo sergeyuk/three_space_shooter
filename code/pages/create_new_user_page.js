@@ -10,6 +10,8 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 	this.ships_left_to_load = this.ships_num_total;
 	this.current_ship = 1;
 	
+	this.camera_angle = 0.0;
+	
 	this.change_ship = function( ship_id ){
 		if( ship_id != this.current_ship ){
 			this.scene.remove( this.ship_meshes[this.current_ship] );
@@ -40,7 +42,7 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 		
 		// Create camera
 		var camera = new THREE.CombinedCamera( div.scrollWidth, div.scrollHeight, 45, 1, 10000, -2000, 10000 );
-		camera.position.set( 0, -15, 10 );
+		camera.position.set( 0, 15, 5 );
 		camera.up.x = camera.up.y = 0;
 		camera.up.z = 1;
 		camera.lookAt( new THREE.Vector3( 0,0,0 ) );
@@ -78,6 +80,16 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 	
 	this.tick = function( dt ){
 		// rotate camera
+		var camera_distance = 15;
+		var camera_rotate_speed = 0.5;
+		this.camera_angle += camera_rotate_speed * dt;
+		if( this.camera_angle > Math.PI * 2.0 ){
+			this.camera_angle -= Math.PI * 2.0;
+		}
+		
+		this.camera.position.x = camera_distance * Math.sin( this.camera_angle );
+		this.camera.position.y = camera_distance * Math.cos( this.camera_angle );
+		this.camera.lookAt( new THREE.Vector3( 0,0,0 ) );
 	}
 };
 
