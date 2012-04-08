@@ -6,9 +6,9 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 	this.last_time_t = 0;
 	this.stop_rendering = false;
 	this.ship_meshes = [];
-	this.ships_num_total = 1;
+	this.ships_num_total = 2;
 	this.ships_left_to_load = this.ships_num_total;
-	this.current_ship = 0;
+	this.current_ship = 1;
 	
 	this.change_ship = function( ship_id ){
 		if( ship_id != this.current_ship ){
@@ -19,9 +19,8 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 	}
 	 
 	this.load_ships = function(){
-		var ships_num_total = 1;
 		var that = this;
-		for( var i = 0; i < ships_num_total; i++ ){
+		for( var i = 0; i < this.ships_num_total; i++ ){
 			load_ship_geometry( i, function( geometry, material ){
 				var mesh = new THREE.Mesh( geometry, material );
 				that.ship_meshes.push( mesh );
@@ -100,11 +99,33 @@ function CREATE_NEW_USER_PAGE_DATA_animate(){
 var CREATE_NEW_USER_PAGE_DATA = new CREATE_NEW_USER_PAGE_DATA_CLASS;
 
 function on_create_new_user_prev_button_click(){
-	
+	if( CREATE_NEW_USER_PAGE_DATA.ships_left_to_load == 0 ){
+		var total_ships = CREATE_NEW_USER_PAGE_DATA.ships_num_total;
+		var current_ship = CREATE_NEW_USER_PAGE_DATA.current_ship;
+		
+		var desired_ship = current_ship - 1;
+		
+		if( desired_ship < 0 ){
+			desired_ship = total_ships - 1;
+		}
+		
+		CREATE_NEW_USER_PAGE_DATA.change_ship( desired_ship );
+	}
 }
 
 function on_create_new_user_next_button_click(){
-	
+	if( CREATE_NEW_USER_PAGE_DATA.ships_left_to_load == 0 ){
+		var total_ships = CREATE_NEW_USER_PAGE_DATA.ships_num_total;
+		var current_ship = CREATE_NEW_USER_PAGE_DATA.current_ship;
+		
+		var desired_ship = current_ship + 1;
+		
+		if( desired_ship >= total_ships ){
+			desired_ship = 0;
+		}
+		
+		CREATE_NEW_USER_PAGE_DATA.change_ship( desired_ship );
+	}
 }
 
 function enter_create_new_user_page(){

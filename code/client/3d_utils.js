@@ -1,6 +1,3 @@
-
-var load_texture = THREE.ImageUtils.loadTexture;
-
 function create_normal_map_material( diffuse_texture, normal_map_texture ){
 	var ambient = 0x111111, diffuse = 0xaaaaaa, specular = 0x7f7f7f, shininess = 20;
 
@@ -36,24 +33,26 @@ function create_standard_diffuse_material( diffuse_texture ){
 
 function load_ship_geometry( ship_mesh_id, callback ){
 	var mesh_paths = [
-		"obj/Gg/Gg.js"
+		"obj/ship1/Ship_01.js",
+		"obj/ship3/Ship_03.js"
 	];
 	
 	var diffuse_texture_paths = [
-		"obj/Gg/Gg.png"		 
+		"obj/ship1/Ship_01R.jpg",
+		"obj/ship3/Ship_03_R.jpg"		 
 	];
 	
 	var normal_map_paths = [
-		"obj/Gg/Gg_NRM.jpg"
+		"obj/ship1/Ship_01_NRM.jpg",
+		"obj/ship3/Ship_03_NRM.jpg"
 	];
 	
-	var t1 = THREE.ImageUtils.loadTexture("obj/Gg/Gg.png");
-	var t2 = THREE.ImageUtils.loadTexture("obj/Gg/Gg_NRM.jpg");
-	//load_texture( diffuse_texture_paths[ship_mesh_id] )
-	//load_texture( normal_map_paths[ship_mesh_id] ) 
+	var diffuse_texture = THREE.ImageUtils.loadTexture( diffuse_texture_paths[ship_mesh_id] );
+	var normal_map_texture = THREE.ImageUtils.loadTexture( normal_map_paths[ship_mesh_id] );
+	
 	var material = create_normal_map_material( 
-					t1, 
-					t2 );
+					diffuse_texture, 
+					normal_map_texture );
 
 	var loader = new THREE.JSONLoader();	
 	loader.load( mesh_paths[ship_mesh_id], function( geometry ){
