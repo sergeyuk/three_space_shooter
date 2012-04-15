@@ -21,6 +21,9 @@ var app = require('http').createServer(handler)
 var io = require('socket.io').listen(app)
 var fs = require('fs')
 
+var Database = require( './server/database' ).Database;
+var db = new Database;
+
 console.log("started front end server...");
 //io.set( 'log level', 0 );
 
@@ -28,23 +31,6 @@ var FRONT_END_SERVER_DATA = {
 	user_id_counter : 0,
 	users_logged_in : {}
 };
-
-var DATABASE = new function(){
-	this.registered_users = {};
-};
-
-DATABASE.get_registered_user = function( user_name ){
-	if( this.registered_users.hasOwnProperty( user_name ) ){
-		return this.registered_users[user_name];
-	}
-	else{
-		return undefined;
-	}
-}
-
-DATABASE.is_user_registered = function( user_name ){
-	return ( this.get_registered_user( user_name ) !== undefined );
-}
 
 io.sockets.on('connection', function (socket) {
 	var this_user_id = FRONT_END_SERVER_DATA.user_id_counter++;
@@ -57,10 +43,8 @@ io.sockets.on('connection', function (socket) {
 		if( data && data[0] ){
 			socket.get( 'id', function( err, user_id ){
 				var user_name = data[0];
-				if( DATABASE.is_user_registered( user_name ) ){
-					FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { name: user_name };
-					socket.broadcast.emit( 'new user', user_name );
-					socket.emit( 'login accepted', DATABASE.get_registered_user( user_name ) );	
+				if( db.is_user_registered( user_name ) ){
+					login_user( user_name, user_id, socket );
 				}
 				else{
 					socket.emit( 'create new user', user_name );
@@ -70,6 +54,23 @@ io.sockets.on('connection', function (socket) {
 		else{
 			socket.emit( 'error', 'login rejected' );
 		}
+	});
+	
+	socket.on( 'create new user request', function( data ){
+		socket.get( 'id', function( err, user_id ){
+			if( data && data.length == 2 ){
+				var desired_nickname = data[0];
+				var desired_ship_id = data[1];
+				
+				if( !db.is_user_registered( desired_nickname) ){
+					db.register_new_user( desired_nickname, {name:desired_nickname, ship:desired_ship_id} )
+					login_user( desired_nickname, user_id, socket );
+				}
+				else{
+					socket.emit( 'error', 'Nickname ' + desired_nickname + ' is already taken.' );
+				}
+			}
+		});
 	});
 	
 	socket.on('disconnect', function() {
@@ -93,7 +94,33 @@ io.sockets.on('connection', function (socket) {
 	});
 });
 
+function get_online_user_object( username ){
+	for( var user_id in FRONT_END_SERVER_DATA.users_logged_in ){
+		if( FRONT_END_SERVER_DATA.users_logged_in.hasOwnProperty( user_id ) ){
+			var user = FRONT_END_SERVER_DATA.users_logged_in[user_id];
+			if( user.name == username ){
+				return user;
+			}
+		}		
+	}
+	
+	return undefined;
+}
+
+function login_user( username, user_id, socket ){
+	if( get_online_user_object( username ) === undefined ){
+		var user_object = db.get_registered_user( username );
+		FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { name: username, obj: user_object, socket: socket };
+		socket.broadcast.emit( 'new user', username );
+		socket.emit( 'login accepted', user_object );
+	}
+	else{
+		socket.emit( 'error', "User " + username + " is already logged in." );
+	}
+}
+
 app.listen(8000);
+
 
 /*
 var last_time_value = new Date().getTime();

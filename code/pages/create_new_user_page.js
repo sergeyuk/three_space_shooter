@@ -140,7 +140,21 @@ function on_create_new_user_next_button_click(){
 	}
 }
 
-function enter_create_new_user_page(){
+function on_create_new_user_submit_button_click(){
+	var nickname_box = $('#create_new_user_desired_name')[0];
+	var desired_nickname = nickname_box.value;
+	if( desired_nickname.length > 0 ){
+		CLIENT_STATE.front_end_socket.emit( 'create new user request', [desired_nickname, CREATE_NEW_USER_PAGE_DATA.current_ship] );
+	}
+	else{
+		alert( "Please enter your nickname" );
+	}
+}
+
+function enter_create_new_user_page( desired_nickname ){
+	var nickname_box = $('#create_new_user_desired_name')[0];
+	nickname_box.value = desired_nickname;
+	
 	CREATE_NEW_USER_PAGE_DATA.div = $( 'div[name=create_new_user_3d_view]' )[0];
 	
 	var prev_button = $( 'button[name=create_new_user_prev_ship]' )[0];
@@ -148,6 +162,9 @@ function enter_create_new_user_page(){
 	
 	var next_button = $( 'button[name=create_new_user_next_ship]' )[0];
 	next_button.onmouseup = on_create_new_user_next_button_click;
+	
+	var submit_button = $('#create_new_user_button')[0];
+	submit_button.onmouseup = on_create_new_user_submit_button_click;
 	
 	CREATE_NEW_USER_PAGE_DATA.init_3d_scene();
 	CREATE_NEW_USER_PAGE_DATA.load_ships();
