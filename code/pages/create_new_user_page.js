@@ -68,9 +68,9 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 		directional_light.position.set( 10, 50, 130 ).normalize();
 		scene.add( directional_light );
 		
-		// Test plance
-		var plane = new THREE.Mesh( new THREE.PlaneGeometry(1000,1000,20,20), new THREE.MeshBasicMaterial( { color:0x555555, wireframe:true} ) );
-		scene.add( plane );
+		// Test plane
+		//var plane = new THREE.Mesh( new THREE.PlaneGeometry(1000,1000,20,20), new THREE.MeshBasicMaterial( { color:0x555555, wireframe:true} ) );
+		//scene.add( plane );
 
 		// Save the objects
 		this.renderer = renderer;	

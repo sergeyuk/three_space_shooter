@@ -1,3 +1,5 @@
+
+
 function enter_game_page(){
 	
 }
