@@ -92,17 +92,37 @@ function MAIN_PAGE_DATA_animate(){
 	}
 }
 
+function MAIN_PAGE_join_room_button_click(){
+	CLIENT_STATE.front_end_socket.emit( 'join room request' );
+}
+
+function MAIN_PAGE_init_extra_socket_events(){
+	CLIENT_STATE.front_end_socket.on( 'chat', function(){
+		
+	});
+}
+
+function MAIN_PAGE_clear_extra_socket_events(){
+	CLIENT_STATE.front_end_socket.on( 'chat' );	
+}
+
 var MAIN_PAGE_DATA = new MAIN_PAGE_DATA_CLASS;
 
 function enter_main_page( user_object ){
+	var join_button = $( '#main_page_join_room_button' )[0];
+	join_button.onmouseup = MAIN_PAGE_join_room_button_click;
+	
 	MAIN_PAGE_DATA.div = $( '#main_page_3d_div' )[0];
 	MAIN_PAGE_DATA.user_object = user_object;
 	
 	MAIN_PAGE_DATA.init_3d_scene();
 	MAIN_PAGE_DATA.load_ship();
 	MAIN_PAGE_DATA_animate();
+	
+	MAIN_PAGE_init_extra_socket_events();
 }
 
 function leave_main_page(){
+	MAIN_PAGE_clear_extra_socket_events();
 	MAIN_PAGE_DATA.stop_rendering = true;
 }

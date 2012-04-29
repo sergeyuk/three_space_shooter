@@ -1,11 +1,42 @@
 var url = require("url");
+var fs = require('fs')
 var ShipClass = require( "./shared/ship" ).ShipClass;
 var WorldClass = require( "./shared/world" ).WorldClass;
 var ProjectileClass = require( "./shared/projectile" ).ProjectileClass;
 require( "./shared/custom_math" );
 var FlagClass = require( "./shared/flag" ).FlagClass;
 
-function handler (req, res) {
+var server_connection = require('net').connect( 8124, function(){
+	server_connection.write( JSON.stringify( { message_type:0 }) );
+});
+
+
+server_connection.on( 'data', function( data ){
+	console.log( 'server_connection.on(data: ' + data );	
+	data = JSON.parse( data );
+	if( data.msg_type == 0 ){
+		var app = require('http').createServer( http_handler )
+		var io = require('socket.io').listen( app );
+		app.listen( data.port_number );
+		console.log( 'Here is app var:' );
+		console.log( app );
+		console.log( '-----------------\nadddress: ' );
+		console.log( app.address() );	
+		
+		io.sockets.on('connection', function( socket ){
+			// Client callbacks
+			
+		})
+	}
+});
+
+/*
+setInterval( function(){
+	server_connection.write(JSON.stringify( { text:'Interval message from room server.' }) )
+}, 3000 )
+*/
+
+function http_handler (req, res) {
 	if (req.method === "GET" || req.method === "HEAD") {
 		var pathname = url.parse(req.url).pathname;
 		console.log( pathname );
@@ -21,6 +52,16 @@ function handler (req, res) {
 		});
 	}
 }
+
+/*
+var url = require("url");
+var ShipClass = require( "./shared/ship" ).ShipClass;
+var WorldClass = require( "./shared/world" ).WorldClass;
+var ProjectileClass = require( "./shared/projectile" ).ProjectileClass;
+require( "./shared/custom_math" );
+var FlagClass = require( "./shared/flag" ).FlagClass;
+
+
 
 
 var GAME = {
@@ -118,3 +159,4 @@ var sync_function = function(){
 process.nextTick(sync_function);
 //setInterval( sync_function, 100 );
 
+*/

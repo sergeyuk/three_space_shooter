@@ -24,12 +24,44 @@ var fs = require('fs')
 var Database = require( './server/database' ).Database;
 var db = new Database;
 
+
+var tcp_server = require('net').createServer( function ( conn ){	
+	console.log('server connected');
+	console.log( conn );
+	
+	conn.game_server_id = FRONT_END_SERVER_DATA.room_servers_id_counter++;
+	
+	conn.on('data', function(data){
+		data = JSON.parse( data );
+		var type = data.message_type;
+		if( type == 0 ){
+			var port_number = 9000 + conn.game_server_id;
+			conn.write( JSON.stringify( { msg_type: 0, port: port_number } ) );
+		}
+		else if( type == 1 ){
+			
+		}
+		console.log('game_server_connection_handler on data: ' + data.text);
+		console.log( 'conn.game_server_id = ' + conn.game_server_id );
+	});
+	
+	conn.on('end', function() {
+		console.log('server disconnected');
+	});
+	//conn.pipe(conn);
+});
+
+tcp_server.listen( 8124 );
+
 console.log("started front end server...");
 //io.set( 'log level', 0 );
 
 var FRONT_END_SERVER_DATA = {
 	user_id_counter : 0,
-	users_logged_in : {}
+	users_logged_in : {},
+	
+	room_servers_id_counter : 0,
+	room_servers : {}
 };
 
 io.sockets.on('connection', function (socket) {
@@ -78,9 +110,10 @@ io.sockets.on('connection', function (socket) {
 			var logged_in_users = FRONT_END_SERVER_DATA.users_logged_in;
 			
 			if( logged_in_users.hasOwnProperty( user_id ) ){
-				delete logged_in_users[user_id];			
+				var user_name = logged_in_users[user_id].name;
+				delete logged_in_users[user_id];
 				console.log( "broadcasting disconnect message. Client id=" + user_id );
-				socket.broadcast.emit( 'disconnected', user_id );				
+				socket.broadcast.emit( 'chat', 'User ' + user_name + ' has been disconnected!' );				
 			}
 		});
 	});
@@ -90,6 +123,10 @@ io.sockets.on('connection', function (socket) {
 	});
 	
 	socket.on( 'join room request', function(){
+		socket.get( 'id', function( err, user_id ){
+			var user = FRONT_END_SERVER_DATA.users_logged_in[user_id];
+			get_random_guid();
+		})
 		// Not implemented yet
 	});
 });
@@ -140,5 +177,13 @@ var sync_function = function(){
 }
 
 process.nextTick(sync_function);*/
+
+
+function get_random_guid() {
+	function S4() {
+		return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+	}
+	return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+}
 
 
