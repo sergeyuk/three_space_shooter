@@ -25,24 +25,50 @@ var Database = require( './server/database' ).Database;
 var db = new Database;
 
 
+var BASE_ROOM_SERVER_PORT_NUMBER = 9000;
+
+var G2F_CONNECT_REQUEST = 0;
+var G2F_INITIAL_DATA = 1;
+var G2F_ADD_USER_RESPONSE = 2;
+
+var F2G_CONNECT_RESPONSE = 0;
+var F2G_ADD_USER_REQUEST = 1;
+
+
 var tcp_server = require('net').createServer( function ( conn ){	
-	console.log('server connected');
-	console.log( conn );
+	console.log('Connected room server...');
 	
 	conn.game_server_id = FRONT_END_SERVER_DATA.room_servers_id_counter++;
 	
 	conn.on('data', function(data){
+		console.log( 'Received data from a room server. Data: ' + data );
 		data = JSON.parse( data );
+		var port_number = BASE_ROOM_SERVER_PORT_NUMBER + conn.game_server_id;
 		var type = data.message_type;
-		if( type == 0 ){
-			var port_number = 9000 + conn.game_server_id;
-			conn.write( JSON.stringify( { msg_type: 0, port: port_number } ) );
+		if( type == G2F_CONNECT_REQUEST ){
+			conn.write( JSON.stringify( { msg_type: F2G_CONNECT_RESPONSE, port: port_number } ) );
 		}
-		else if( type == 1 ){
+		else if( type == G2F_INITIAL_DATA ){
+			FRONT_END_SERVER_DATA.room_servers[conn.game_server_id] = {
+				port: port_number
+				,address: data.address
+				,socket: conn
+				//,num_joined : 0
+			};
+		}
+		else if( type == G2F_ADD_USER_RESPONSE ){
+			var user_id = data.user_id;
+			var guid = data.guid;
 			
+			var user = FRONT_END_SERVER_DATA.users_logged_in[user_id];
+			var server = FRONT_END_SERVER_DATA.room_servers[conn.game_server_id];
+			
+			user.socket.emit( 'game session started', { 
+				address: server.address,
+				port: server.port,
+				access_data: { user_id: user_id, guid: guid }
+			} );
 		}
-		console.log('game_server_connection_handler on data: ' + data.text);
-		console.log( 'conn.game_server_id = ' + conn.game_server_id );
 	});
 	
 	conn.on('end', function() {
@@ -125,11 +151,25 @@ io.sockets.on('connection', function (socket) {
 	socket.on( 'join room request', function(){
 		socket.get( 'id', function( err, user_id ){
 			var user = FRONT_END_SERVER_DATA.users_logged_in[user_id];
-			get_random_guid();
+			var room_server_id = find_the_best_room_server( user_id );
+			
+			var random_value = get_random_guid();
+			var room_server = FRONT_END_SERVER_DATA.room_servers[room_server_id];
+			room_server.socket.write( JSON.stringify(
+				{ 	msg_type: F2G_ADD_USER_REQUEST, 
+					client_id: user_id, 
+					guid: random_value } 
+				) )
 		})
 		// Not implemented yet
 	});
 });
+
+function find_the_best_room_server( user_id ){
+	for( var server_id in FRONT_END_SERVER_DATA.room_servers ){
+		return server_id;
+	}
+}
 
 function get_online_user_object( username ){
 	for( var user_id in FRONT_END_SERVER_DATA.users_logged_in ){
@@ -147,7 +187,13 @@ function get_online_user_object( username ){
 function login_user( username, user_id, socket ){
 	if( get_online_user_object( username ) === undefined ){
 		var user_object = db.get_registered_user( username );
-		FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { name: username, obj: user_object, socket: socket };
+		
+		FRONT_END_SERVER_DATA.users_logged_in[ user_id ] = { 
+			name: username, 
+			obj: user_object, 
+			socket: socket 
+		};
+		
 		socket.broadcast.emit( 'new user', username );
 		socket.emit( 'login accepted', user_object );
 	}

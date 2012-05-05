@@ -6,27 +6,70 @@ var ProjectileClass = require( "./shared/projectile" ).ProjectileClass;
 require( "./shared/custom_math" );
 var FlagClass = require( "./shared/flag" ).FlagClass;
 
+
+var G2F_CONNECT_REQUEST = 0;
+var G2F_INITIAL_DATA = 1;
+var G2F_ADD_USER_RESPONSE = 2;
+
+var F2G_CONNECT_RESPONSE = 0;
+var F2G_ADD_USER_REQUEST = 1;
+
+
+var ROOM_SERVER_DATA = {
+	expected_users : {},
+	connected_users : {}
+};
+
 var server_connection = require('net').connect( 8124, function(){
-	server_connection.write( JSON.stringify( { message_type:0 }) );
+	server_connection.write( JSON.stringify( { message_type: G2F_CONNECT_REQUEST }) );
 });
 
 
 server_connection.on( 'data', function( data ){
 	console.log( 'server_connection.on(data: ' + data );	
 	data = JSON.parse( data );
-	if( data.msg_type == 0 ){
+	if( data.msg_type == F2G_CONNECT_RESPONSE ){
 		var app = require('http').createServer( http_handler )
 		var io = require('socket.io').listen( app );
-		app.listen( data.port_number );
-		console.log( 'Here is app var:' );
-		console.log( app );
-		console.log( '-----------------\nadddress: ' );
-		console.log( app.address() );	
 		
 		io.sockets.on('connection', function( socket ){
 			// Client callbacks
+			console.log( 'Received connection request from the client...' );
 			
+			socket.on( 'handshake', function( data ){
+				console.log( 'Received handshake request from the client...' );
+				var user_id = data.id;
+				var guid = data.guid;
+				if( ROOM_SERVER_DATA.expected_users[user_id].guid == guid ){
+					// Make this user as connected
+					ROOM_SERVER_DATA.connected_users[user_id] = ROOM_SERVER_DATA.expected_users[user_id];
+					delete ROOM_SERVER_DATA.expected_users[user_id];
+					
+					socket.emit( 'handshake accepted' );
+					console.log( 'Handshake accepted by the server. Now sending game messages..' );
+				}
+			});
 		})
+		
+		app.listen( data.port_number );
+		
+		server_connection.write( JSON.stringify( { 
+			message_type: G2F_INITIAL_DATA, 
+			address: app.address().address 
+		} ) );
+	}
+	else if( data.msg_type == F2G_ADD_USER_REQUEST ){
+		var user_id = data.client_id;
+		var guid = data.guid;
+		// expected user
+		ROOM_SERVER_DATA.expected_users[user_id] = { guid: guid }
+		console.log( 'Added expected user. ID: ' + user_id );
+		
+		server_connection.write(JSON.stringify({
+			message_type: G2F_ADD_USER_RESPONSE,
+			user_id: user_id,
+			guid: guid
+		}));		
 	}
 });
 
