@@ -1,6 +1,5 @@
 var MAIN_PAGE_DATA_CLASS = function(){
 	this.div;
-	this.user_object;
 	this.camera;
 	this.scene;
 	this.renderer;
@@ -12,7 +11,7 @@ var MAIN_PAGE_DATA_CLASS = function(){
 	
 	this.load_ship = function(){
 		var that = this;
-		var ship_id = this.user_object.ship;
+		var ship_id = CLIENT_STATE.user_object.ship;
 		load_ship_geometry( ship_id, function( geometry, material ){
 			var mesh = new THREE.Mesh( geometry, material );
 			that.ship_meshes.push( mesh );
@@ -113,7 +112,7 @@ function enter_main_page( user_object ){
 	join_button.onmouseup = MAIN_PAGE_join_room_button_click;
 	
 	MAIN_PAGE_DATA.div = $( '#main_page_3d_div' )[0];
-	MAIN_PAGE_DATA.user_object = user_object;
+	CLIENT_STATE.user_object = user_object;
 	
 	MAIN_PAGE_DATA.init_3d_scene();
 	MAIN_PAGE_DATA.load_ship();

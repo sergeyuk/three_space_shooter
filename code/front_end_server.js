@@ -1,3 +1,9 @@
+/*
+ * TODO:
+ * 	* Let the room server know if the expected client disconnected 
+ *  
+ */
+ 
 var url = require("url");
 
 function handler (req, res) {

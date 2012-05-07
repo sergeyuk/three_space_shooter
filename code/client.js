@@ -24,6 +24,7 @@ var page_leave_callbacks = [
 var CLIENT_STATE = new function(){
 	this.page_id;
 	this.front_end_socket;
+	this.user_object;
 };
 
 ///////////////// execution code //////////////
