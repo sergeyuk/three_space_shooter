@@ -1,0 +1,2 @@
+start start_front_end_server.cmd
+start start_room_server.cmd

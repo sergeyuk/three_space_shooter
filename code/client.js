@@ -24,6 +24,7 @@ var page_leave_callbacks = [
 var CLIENT_STATE = new function(){
 	this.page_id;
 	this.front_end_socket;
+	this.game_socket;
 	this.user_object;
 };
 
@@ -32,8 +33,10 @@ client_init();
 
 ///////////////// client functions ////////////
 function client_init(){
-	var front_end_socket = io.connect();
+	var front_end_socket = io.connect('http://localhost', {port:8000});
 	CLIENT_STATE.front_end_socket = front_end_socket;
+	
+	//CLIENT_STATE.game_socket = io.connect('192.168.0.5', {port:9000});;
 	
 	front_end_socket.on('connected', function () {
 		console.log('Connected to the Front End server.');

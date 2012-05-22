@@ -6,6 +6,11 @@ var ProjectileClass = require( "./shared/projectile" ).ProjectileClass;
 require( "./shared/custom_math" );
 var FlagClass = require( "./shared/flag" ).FlagClass;
 
+var app = require('http').createServer( http_handler )
+		
+var io = require('socket.io').listen( app );
+io.set( 'log level', 3 );
+
 
 var G2F_CONNECT_REQUEST = 0;
 var G2F_INITIAL_DATA = 1;
@@ -32,8 +37,6 @@ server_connection.on( 'data', function( data ){
 	console.log( 'server_connection.on(data: ' + data );	
 	data = JSON.parse( data );
 	if( data.msg_type == F2G_CONNECT_RESPONSE ){
-		var app = require('http').createServer( http_handler )
-		var io = require('socket.io').listen( app );
 		
 		io.sockets.on('connection', function( socket ){
 			// Client callbacks
@@ -42,8 +45,13 @@ server_connection.on( 'data', function( data ){
 			
 			socket.on( 'handshake', function( data ){
 				console.log( 'Received handshake request from the client...' );
-				var user_id = data.id;
+				console.log( data );
+				var user_id = "" + data.user_id + "";
 				var guid = data.guid;
+				console.log( "Expected users: " );
+				console.log( ROOM_SERVER_DATA.expected_users );
+				console.log( "ROOM_SERVER_DATA.expected_users[ " + user_id + "] => " );
+				console.log( ROOM_SERVER_DATA.expected_users[user_id] );
 				if( ROOM_SERVER_DATA.expected_users[user_id].guid == guid ){
 					// Make this user as connected
 					ROOM_SERVER_DATA.connected_users[user_id] = ROOM_SERVER_DATA.expected_users[user_id];
@@ -137,6 +145,10 @@ server_connection.on( 'data', function( data ){
 
 
 function http_handler (req, res) {
+	console.log( "HTTP RQ: " );
+	console.log( req );
+	console.log( "============================================" );
+	
 	if (req.method === "GET" || req.method === "HEAD") {
 		var pathname = url.parse(req.url).pathname;
 		console.log( pathname );

@@ -294,7 +294,7 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 	var access_data = game_data.access_data;
 	
 	//var socket = io.connect(address ,{port:port});
-	var socket = io.connect( 'http://localhost' ,{port:port});
+	var socket = io.connect( '192.168.0.5' ,{port:port});
 
 	socket.on('initially connected', function (data) {
 		console.log('successfully connceted. Starting handshake process');
