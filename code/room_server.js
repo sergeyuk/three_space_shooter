@@ -17,7 +17,10 @@ var F2G_ADD_USER_REQUEST = 1;
 
 var ROOM_SERVER_DATA = {
 	expected_users : {},
-	connected_users : {}
+	connected_users : {},
+	last_user_id : 0,
+	default_spawn_point : {x:0,y:0,z:0},
+	world : new WorldClass()
 };
 
 var server_connection = require('net').connect( 8124, function(){
@@ -35,6 +38,7 @@ server_connection.on( 'data', function( data ){
 		io.sockets.on('connection', function( socket ){
 			// Client callbacks
 			console.log( 'Received connection request from the client...' );
+			socket.emit( 'initially connected' );
 			
 			socket.on( 'handshake', function( data ){
 				console.log( 'Received handshake request from the client...' );
@@ -47,11 +51,69 @@ server_connection.on( 'data', function( data ){
 					
 					socket.emit( 'handshake accepted' );
 					console.log( 'Handshake accepted by the server. Now sending game messages..' );
+					
+					var this_user_id = ROOM_SERVER_DATA.last_user_id++;
+					var new_ship = new ShipClass();
+					new_ship.mesh = 1;
+					new_ship.set_position( ROOM_SERVER_DATA.default_spawn_point );
+					ROOM_SERVER_DATA.world.ships[this_user_id] = new_ship;
+					socket.set('id', this_user_id );
+					socket.emit( "connected", [this_user_id, ROOM_SERVER_DATA.world.ships] );
+					socket.broadcast.emit( 'connected', [this_user_id, ROOM_SERVER_DATA.world.ships] );	
+
 				}
 			});
-		})
+			
+			socket.on( 'ship control on', function(key){ 
+				socket.get( 'id', function( err, user_id ){
+					//console.log( "ship control on. id=" + user_id );
+					var this_ship = ROOM_SERVER_DATA.world.ships[user_id];
+					var fwd = this_ship.get_forward();
+					var turn = this_ship.get_turn();
+					if(key == 0 ) this_ship.set_forward( -1 );
+					if(key == 1 ) this_ship.set_turn( 1 );
+					if(key == 2 ) this_ship.set_forward( 1 );
+					if(key == 3 ) this_ship.set_turn( -1 );
+					if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
+						//console.log( '=============BROADCAST================');
+						socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+					}
+				});
+			});
+
+			socket.on( 'ship control off', function(key){ 
+				socket.get( 'id', function( err, user_id ){
+					var this_ship = ROOM_SERVER_DATA.world.ships[user_id];
+					var fwd = this_ship.get_forward();
+					var turn = this_ship.get_turn();
+					if(key == 0 ) this_ship.set_forward( 0 );
+					if(key == 1 ) this_ship.set_turn( 0 );
+					if(key == 2 ) this_ship.set_forward( 0 );
+					if(key == 3 ) this_ship.set_turn( 0 );
+					if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
+						//console.log( '=============BROADCAST================');
+						socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+					}
+				});
+			});
 		
-		app.listen( data.port_number );
+			socket.on( 'ship shot', function( data ){
+				socket.broadcast.emit( 'ship shoot event', data );
+				ROOM_SERVER_DATA.world.add_shot( data[0] );
+			});
+			
+			socket.on('disconnect', function() {
+				socket.get( 'id', function( err, user_id ){
+					delete ROOM_SERVER_DATA.world.ships[user_id];
+					console.log( "broadcasting disconnect message. Client id=" + user_id );
+					socket.broadcast.emit( 'disconnected', user_id );
+				});
+			});
+		});
+		
+		app.listen( data.port );
+		
+		console.log( 'Listening to port ' + data.port )
 		
 		server_connection.write( JSON.stringify( { 
 			message_type: G2F_INITIAL_DATA, 
@@ -73,11 +135,6 @@ server_connection.on( 'data', function( data ){
 	}
 });
 
-/*
-setInterval( function(){
-	server_connection.write(JSON.stringify( { text:'Interval message from room server.' }) )
-}, 3000 )
-*/
 
 function http_handler (req, res) {
 	if (req.method === "GET" || req.method === "HEAD") {

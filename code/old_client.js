@@ -1,4 +1,5 @@
 
+if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 var GameClass = function(){
 	this.container;
@@ -21,133 +22,28 @@ var GameClass = function(){
 	// particles
 	this.particlesScene;
 	
-	this.front_end_socket;
-	this.room_socket;
+	this.socket;
 	this.this_ship_id = -1;
-	this.page_id = LOGIN_PAGE_ID;
 	
-	//this.reset = function(){ this = new GameClass; }
 }
 
-/*
+var stats;
+
 var materials_array = {
 	1 : { map: THREE.ImageUtils.loadTexture( "obj/Gg/Gg.png" ) }
 };
 
 var meshes_array = { 
 	1 : "obj/Gg/Gg.js"
-};*/
+};
 
 var GAME = new GameClass();
 GAME.world = new WorldClass();
 
-
-//init();
-//animate();
-
-	function init_front_end_socket_io(){
-		var socket = io.connect();
-
-		socket.on('connected', function () {
-			
-			change_page( LOGIN_PAGE_ID );
-			
-			console.log('successfully connceted');
-			var new_user_id = data[0];
-			if( GAME.this_ship_id == -1 ){
-				GAME.this_ship_id = new_user_id;
-				create_ships_from_server_data(data[1]);
-			}
-			else{
-				var one_user_array = {};
-				
-				one_user_array[ new_user_id ] = data[1][new_user_id];
-				create_ships_from_server_data( one_user_array );
-			}
-		});
-
-		socket.on('disconnected', function( data ){
-			GAME.scene.remove( GAME.world.ships[data].mesh );
-			delete GAME.world.ships[data];
-		});
-
-		socket.on( 'update', function( data ){
-				for( ship_id in data ){
-					var server_ship = data[ship_id];
-					var client_ship = GAME.world.ships[ship_id];
-					client_ship.set_updated_position( server_ship.pos );
-					client_ship.vel			= server_ship.vel;
-					client_ship.acc 		= server_ship.acc;
-					client_ship.forward_value	= server_ship.forward_value;
-					client_ship.turn_value 		= server_ship.turn_value;
-					client_ship.set_updated_angle( server_ship.angle );
-					client_ship.angular_vel		= server_ship.angular_vel;
-				}
-			});
-			
-		socket.on( 'ship control update', function( data ){
-				var ship_id = data[0];
-				var forward = data[1];
-				var turn = data[2];
-				handle_ship_control( GAME.world.ships[ship_id], forward, turn );
-			});
-			
-		socket.on( 'ship shoot event', function( data ){
-			create_shoot( data[0] );
-		});
-		GAME.front_end_socket = socket;
-	}
-		
-	function init_room_socket_io(){
-		var socket = io.connect();
-
-		socket.on('connected', function (data) {
-			console.log('successfully connceted');
-			var new_user_id = data[0];
-			if( GAME.this_ship_id == -1 ){
-				GAME.this_ship_id = new_user_id;
-				create_ships_from_server_data(data[1]);
-			}
-			else{
-				var one_user_array = {};
-				
-				one_user_array[ new_user_id ] = data[1][new_user_id];
-				create_ships_from_server_data( one_user_array );
-			}
-		});
-
-		socket.on('disconnected', function( data ){
-			GAME.scene.remove( GAME.world.ships[data].mesh );
-			delete GAME.world.ships[data];
-		});
-
-		socket.on( 'update', function( data ){
-				for( ship_id in data ){
-					var server_ship = data[ship_id];
-					var client_ship = GAME.world.ships[ship_id];
-					client_ship.set_updated_position( server_ship.pos );
-					client_ship.vel			= server_ship.vel;
-					client_ship.acc 		= server_ship.acc;
-					client_ship.forward_value	= server_ship.forward_value;
-					client_ship.turn_value 		= server_ship.turn_value;
-					client_ship.set_updated_angle( server_ship.angle );
-					client_ship.angular_vel		= server_ship.angular_vel;
-				}
-			});
-			
-		socket.on( 'ship control update', function( data ){
-				var ship_id = data[0];
-				var forward = data[1];
-				var turn = data[2];
-				handle_ship_control( GAME.world.ships[ship_id], forward, turn );
-			});
-			
-		socket.on( 'ship shoot event', function( data ){
-			create_shoot( data[0] );
-		});
-		GAME.room_socket = socket;
-	}
-
+init();
+init_socket_io();
+animate();
+	
 	function create_skybox(){
 		var path = "textures/skybox/";
 		var format = '.jpg';
@@ -248,14 +144,62 @@ GAME.world = new WorldClass();
 		return particle_emitter;
 	}
 	
-	function init_3d_rendering() {
+	function init_socket_io(){
+		var socket = io.connect();
+
+		socket.on('connected', function (data) {
+			console.log('successfully connceted');
+			var new_user_id = data[0];
+			if( GAME.this_ship_id == -1 ){
+				GAME.this_ship_id = new_user_id;
+				create_ships_from_server_data(data[1]);
+			}
+			else{
+				var one_user_array = {};
+				
+				one_user_array[ new_user_id ] = data[1][new_user_id];
+				create_ships_from_server_data( one_user_array );
+			}
+		});
+
+		socket.on('disconnected', function( data ){
+			GAME.scene.remove( GAME.world.ships[data].mesh );
+			delete GAME.world.ships[data];
+		});
+
+		socket.on( 'update', function( data ){
+				for( ship_id in data ){
+					var server_ship = data[ship_id];
+					var client_ship = GAME.world.ships[ship_id];
+					client_ship.set_updated_position( server_ship.pos );
+					client_ship.vel			= server_ship.vel;
+					client_ship.acc 		= server_ship.acc;
+					client_ship.forward_value	= server_ship.forward_value;
+					client_ship.turn_value 		= server_ship.turn_value;
+					client_ship.set_updated_angle( server_ship.angle );
+					client_ship.angular_vel		= server_ship.angular_vel;
+				}
+			});
+		socket.on( 'ship control update', function( data ){
+				var ship_id = data[0];
+				var forward = data[1];
+				var turn = data[2];
+				handle_ship_control( GAME.world.ships[ship_id], forward, turn );
+			});
+		socket.on( 'ship shoot event', function( data ){
+			create_shoot( data[0] );
+		});
+		GAME.socket = socket;
+	}
+
+	function init() {
 		GAME.container = document.createElement( 'div' );
 		document.body.appendChild( GAME.container );
 
-		GAME.stats = new Stats();
-		GAME.stats.domElement.style.position = 'absolute';
-		GAME.stats.domElement.style.top = '10px';
-		GAME.container.appendChild( GAME.stats.domElement );
+		stats = new Stats();
+		stats.domElement.style.position = 'absolute';
+		stats.domElement.style.top = '10px';
+		GAME.container.appendChild( stats.domElement );
 
 		GAME.camera = new THREE.CombinedCamera( window.innerWidth, window.innerHeight, 45, 1, 10000, -2000, 10000 );
 		GAME.camera.position.set( 0, -15, 10 );
@@ -314,9 +258,9 @@ GAME.world = new WorldClass();
 		var flag_platform_normal_map = THREE.ImageUtils.loadTexture( "obj/flag_platform/Flag_Platform_NRM.jpg" );
 		var flag_platform_diffuse_texture = THREE.ImageUtils.loadTexture( "obj/flag_platform/Flag_Platform.jpg" );
 		
-		var flag_positions = [ {x:10,y:10,z:0}, {x:-10,y:0,z:0} ];
+		var flag_positions = [ {x:10,y:10,z:0}, {x:-10,y:0,z:0}, {x:30,y:10,z:0} ];
 		
-		for( var i = 0; i < 2; i++ ){
+		for( var i = 0; i < 3; i++ ){
 			GAME.world.flags[i] = new FlagClass();
 			GAME.world.flag_platforms[i] = new FlagPlatformClass();
 			
@@ -448,7 +392,7 @@ GAME.world = new WorldClass();
 		GAME.renderer.render( GAME.scene, GAME.camera );
 		GAME.renderer.render( GAME.particlesScene, GAME.camera );		
 		
-		GAME.stats.update();
+		stats.update();
 		requestAnimationFrame( animate );
 	}
 
@@ -539,3 +483,64 @@ GAME.world = new WorldClass();
 		}
 	}
 
+/////////////////// SERVER /////////////
+io.sockets.on('connection', function (socket) {
+	
+	var this_user_id = GAME.last_user_id++;
+//	socket.set('id', this_user_id);	
+	console.log( "connected one.." );
+
+	var new_ship = new ShipClass();
+	new_ship.mesh = 1;
+	new_ship.set_position( GAME.default_spawn_point );
+	GAME.world.ships[this_user_id] = new_ship;
+	socket.set('id', this_user_id );
+	socket.emit( "connected", [this_user_id, GAME.world.ships] );
+	socket.broadcast.emit( 'connected', [this_user_id, GAME.world.ships] );	
+
+	socket.on( 'ship control on', function(key){ 
+		socket.get( 'id', function( err, user_id ){
+			//console.log( "ship control on. id=" + user_id );
+			var this_ship = GAME.world.ships[user_id];
+			var fwd = this_ship.get_forward();
+			var turn = this_ship.get_turn();
+			if(key == 0 ) this_ship.set_forward( -1 );
+			if(key == 1 ) this_ship.set_turn( 1 );
+			if(key == 2 ) this_ship.set_forward( 1 );
+			if(key == 3 ) this_ship.set_turn( -1 );
+			if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
+				//console.log( '=============BROADCAST================');
+				socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+			}
+		});
+	});
+
+	socket.on( 'ship control off', function(key){ 
+		socket.get( 'id', function( err, user_id ){
+			var this_ship = GAME.world.ships[user_id];
+			var fwd = this_ship.get_forward();
+			var turn = this_ship.get_turn();
+			if(key == 0 ) this_ship.set_forward( 0 );
+			if(key == 1 ) this_ship.set_turn( 0 );
+			if(key == 2 ) this_ship.set_forward( 0 );
+			if(key == 3 ) this_ship.set_turn( 0 );
+			if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
+				//console.log( '=============BROADCAST================');
+				socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+			}
+		});
+	});
+
+	socket.on( 'ship shot', function( data ){
+		socket.broadcast.emit( 'ship shoot event', data );
+		GAME.world.add_shot( data[0] );
+	});
+	
+	socket.on('disconnect', function() {
+		socket.get( 'id', function( err, user_id ){
+			delete GAME.world.ships[user_id];
+			console.log( "broadcasting disconnect message. Client id=" + user_id );
+			socket.broadcast.emit( 'disconnected', user_id );
+		});
+	});
+});
