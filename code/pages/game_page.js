@@ -48,7 +48,9 @@ var GAME_PAGE_DATA_CLASS = function(){
 			
 			//new_ship.particle_emitter = create_particle_system();
 			//new_ship.particle_emitter.offset = new Three.Vector3();
-			new_ship.particle_emitter.container().rotation.z = Math.PI;
+			if( new_ship.particle_emitter ) {
+				new_ship.particle_emitter.container().rotation.z = Math.PI;
+			}
 		});
 	}
 
@@ -177,7 +179,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 		}
 		if(keyCode>=37 && keyCode <=40)	{
 			var key = 40-keyCode;
-			var this_user_id = this.this_ship_id;
+			var this_user_id = GAME_PAGE_DATA.this_ship_id;
 			
 			var forward = undefined;
 			var turn = undefined;
@@ -187,13 +189,13 @@ var GAME_PAGE_DATA_CLASS = function(){
 			if(key == 2 ) forward = 1;
 			if(key == 3 ) turn = -1;
 			
-			this.handle_ship_control( this.world.ships[this_user_id], forward, turn );
+			handle_ship_control( GAME_PAGE_DATA.world.ships[this_user_id], forward, turn );
 			
-			this.socket.emit( 'ship control on', 40-keyCode );
+			GAME_PAGE_DATA.socket.emit( 'ship control on', 40-keyCode );
 		}
 	}
 	
-	this.handle_keyboard_up = function(){
+	this.handle_keyboard_up = function( event ){
 		var keyCode = 0;
 
 		if( event == null ){
@@ -223,7 +225,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 			GAME_PAGE_DATA.socket.emit( 'ship control off', 40-keyCode );
 		}
 		if( keyCode == 32 || keyCode == 17 ){
-			create_shoot( GAME_PAGE_DATA.this_ship_id );
+			GAME_PAGE_DATA.create_shoot( GAME_PAGE_DATA.this_ship_id );
 			GAME_PAGE_DATA.socket.emit( 'ship shot', [GAME_PAGE_DATA.this_ship_id] );
 		}
 	}
@@ -296,7 +298,7 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 	//var socket = io.connect(address ,{port:port});
 	var socket = io.connect( '192.168.0.5' ,{port:port});
 
-	socket.on('initially connected', function (data) {
+	socket.on('initially connected', function() {
 		console.log('successfully connceted. Starting handshake process');
 		socket.emit( 'handshake', access_data );;
 	});
@@ -305,18 +307,18 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 		console.log( 'handshake accepted!' );
 	});
 
-	socket.on( 'connected', function(){
+	socket.on( 'connected', function( data ){
 		console.log('connceted a user');
 		var new_user_id = data[0];
 		if( GAME_PAGE_DATA.this_ship_id == -1 ){
 			GAME_PAGE_DATA.this_ship_id = new_user_id;
-			create_ships_from_server_data(data[1]);
+			GAME_PAGE_DATA.create_ships_from_server_data(data[1]);
 		}
 		else{
 			var one_user_array = {};
 			
 			one_user_array[ new_user_id ] = data[1][new_user_id];
-			create_ships_from_server_data( one_user_array );
+			GAME_PAGE_DATA.create_ships_from_server_data( one_user_array );
 		}
 	});
 
@@ -347,7 +349,7 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 	});
 		
 	socket.on( 'ship shoot event', function( data ){
-		create_shoot( data[0] );
+		GAME_PAGE_DATA.create_shoot( data[0] );
 	});
 	
 	GAME_PAGE_DATA.socket = socket;

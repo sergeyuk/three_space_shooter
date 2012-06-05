@@ -9,7 +9,7 @@ var FlagClass = require( "./shared/flag" ).FlagClass;
 var app = require('http').createServer( http_handler )
 		
 var io = require('socket.io').listen( app );
-io.set( 'log level', 3 );
+io.set( 'log level', 2 );
 
 
 var G2F_CONNECT_REQUEST = 0;
@@ -25,7 +25,8 @@ var ROOM_SERVER_DATA = {
 	connected_users : {},
 	last_user_id : 0,
 	default_spawn_point : {x:0,y:0,z:0},
-	world : new WorldClass()
+	world : new WorldClass(),
+	last_time_value : new Date().getTime()
 };
 
 var server_connection = require('net').connect( 8124, function(){
@@ -62,7 +63,7 @@ server_connection.on( 'data', function( data ){
 					
 					var this_user_id = ROOM_SERVER_DATA.last_user_id++;
 					var new_ship = new ShipClass();
-					new_ship.mesh = 1;
+					new_ship.mesh = ROOM_SERVER_DATA.connected_users[user_id].ship_data.id;
 					new_ship.set_position( ROOM_SERVER_DATA.default_spawn_point );
 					ROOM_SERVER_DATA.world.ships[this_user_id] = new_ship;
 					socket.set('id', this_user_id );
@@ -127,12 +128,29 @@ server_connection.on( 'data', function( data ){
 			message_type: G2F_INITIAL_DATA, 
 			address: app.address().address 
 		} ) );
+		
+		var sync_function = function(){
+			var current_time_value = new Date().getTime();
+			var dt = current_time_value - ROOM_SERVER_DATA.last_time_value;
+			if( dt > 0 ){
+				ROOM_SERVER_DATA.last_time_value = current_time_value;
+				ROOM_SERVER_DATA.world.tick( dt / 1000.0 );
+				io.sockets.emit('update', ROOM_SERVER_DATA.world.ships);
+				process.nextTick(sync_function);
+			}
+			else{
+				setTimeout(sync_function, 1)
+			}	
+		};
+		
+		process.nextTick(sync_function);
+
 	}
 	else if( data.msg_type == F2G_ADD_USER_REQUEST ){
 		var user_id = data.client_id;
 		var guid = data.guid;
 		// expected user
-		ROOM_SERVER_DATA.expected_users[user_id] = { guid: guid }
+		ROOM_SERVER_DATA.expected_users[user_id] = { guid: guid, ship_data : data.ship_data }
 		console.log( 'Added expected user. ID: ' + user_id );
 		
 		server_connection.write(JSON.stringify({

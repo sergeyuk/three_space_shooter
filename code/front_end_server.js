@@ -164,7 +164,8 @@ io.sockets.on('connection', function (socket) {
 			room_server.socket.write( JSON.stringify(
 				{ 	msg_type: F2G_ADD_USER_REQUEST, 
 					client_id: user_id, 
-					guid: random_value } 
+					guid: random_value,
+					ship_data: { id: user.obj.ship } } 
 				) )
 		})
 		// Not implemented yet
