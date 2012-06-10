@@ -294,9 +294,10 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 	var address = game_data.address;
 	var port = game_data.port;
 	var access_data = game_data.access_data;
-	
-	//var socket = io.connect(address ,{port:port});
-	var socket = io.connect( '192.168.0.5' ,{port:port});
+	//address = 'Mef-PC';
+	console.log( 'address: ' + address );
+	var socket = io.connect(address ,{port:port});
+	//var socket = io.connect( '192.168.0.5' ,{port:port});
 
 	socket.on('initially connected', function() {
 		console.log('successfully connceted. Starting handshake process');

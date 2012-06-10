@@ -11,6 +11,7 @@ var app = require('http').createServer( http_handler )
 var io = require('socket.io').listen( app );
 io.set( 'log level', 2 );
 
+var os = require("os");
 
 var G2F_CONNECT_REQUEST = 0;
 var G2F_INITIAL_DATA = 1;
@@ -123,10 +124,17 @@ server_connection.on( 'data', function( data ){
 		app.listen( data.port );
 		
 		console.log( 'Listening to port ' + data.port )
+		var hostname = os.hostname();
+		console.log( '========= HOST ====================' );
+		console.log( hostname );
+		console.log( '=============================' );
+		
+		console.log( app._handle.socket );
 		
 		server_connection.write( JSON.stringify( { 
 			message_type: G2F_INITIAL_DATA, 
-			address: app.address().address 
+			//address: app.address().address
+			address: hostname 
 		} ) );
 		
 		var sync_function = function(){

@@ -33,7 +33,7 @@ client_init();
 
 ///////////////// client functions ////////////
 function client_init(){
-	var front_end_socket = io.connect('http://localhost', {port:8000});
+	var front_end_socket = io.connect();
 	CLIENT_STATE.front_end_socket = front_end_socket;
 	
 	//CLIENT_STATE.game_socket = io.connect('192.168.0.5', {port:9000});;

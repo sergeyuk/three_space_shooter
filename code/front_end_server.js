@@ -43,7 +43,7 @@ var F2G_ADD_USER_REQUEST = 1;
 
 var tcp_server = require('net').createServer( function ( conn ){	
 	console.log('Connected room server...');
-	
+	console.log( conn );
 	conn.game_server_id = FRONT_END_SERVER_DATA.room_servers_id_counter++;
 	
 	conn.on('data', function(data){
