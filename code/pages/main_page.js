@@ -96,13 +96,28 @@ function MAIN_PAGE_join_room_button_click(){
 }
 
 function MAIN_PAGE_init_extra_socket_events(){
-	CLIENT_STATE.front_end_socket.on( 'chat', function(){
-		
+	CLIENT_STATE.front_end_socket.on( 'chat msg', function( data ){
+		MAIN_PAGE_add_chat_message( data[0], data[1] );
 	});
 }
 
+function MAIN_PAGE_add_chat_message( from, text ){
+	var chat_box = $('#main_page_chat_box')[0];
+    chat_box.addText(from + ": " + text);
+}
+
+function MAIN_PAGE_send_chat_message_button_click(){
+	var input_box = $('#main_page_chat_input')[0];
+	var message = input_box.value;
+	if( message.length > 0 ){
+		MAIN_PAGE_add_chat_message( CLIENT_STATE.user_object.name, message );
+		input_box.value = '';
+		CLIENT_STATE.front_end_socket.emit( 'chat msg', message )
+	}
+}
+
 function MAIN_PAGE_clear_extra_socket_events(){
-	CLIENT_STATE.front_end_socket.on( 'chat' );	
+	//CLIENT_STATE.front_end_socket.on( 'chat msg' );	
 }
 
 var MAIN_PAGE_DATA = new MAIN_PAGE_DATA_CLASS;
@@ -110,6 +125,9 @@ var MAIN_PAGE_DATA = new MAIN_PAGE_DATA_CLASS;
 function enter_main_page( user_object ){
 	var join_button = $( '#main_page_join_room_button' )[0];
 	join_button.onmouseup = MAIN_PAGE_join_room_button_click;
+	
+	var send_button = $( '#main_page_chat_send_button' )[0];
+	send_button.onmouseup = MAIN_PAGE_send_chat_message_button_click;
 	
 	MAIN_PAGE_DATA.div = $( '#main_page_3d_div' )[0];
 	CLIENT_STATE.user_object = user_object;

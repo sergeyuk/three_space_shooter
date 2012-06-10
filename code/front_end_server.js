@@ -145,13 +145,23 @@ io.sockets.on('connection', function (socket) {
 				var user_name = logged_in_users[user_id].name;
 				delete logged_in_users[user_id];
 				console.log( "broadcasting disconnect message. Client id=" + user_id );
-				socket.broadcast.emit( 'chat', 'User ' + user_name + ' has been disconnected!' );				
+				socket.broadcast.emit( 'chat msg', ['SERVER', 'User ' + user_name + ' has been disconnected.'] );				
 			}
 		});
 	});
 	
 	socket.on( 'chat msg', function( data ) {
-		socket.broadcast.emit( 'chat msg', data );
+		socket.get( 'id', function( err, user_id ){
+			var logged_in_users = FRONT_END_SERVER_DATA.users_logged_in;
+			
+			if( logged_in_users.hasOwnProperty( user_id ) ){
+				var user_name = logged_in_users[user_id].name;
+			
+				if( data && data.length > 0 ){
+					socket.broadcast.emit( 'chat msg', [user_name, data] );
+				}
+			}
+		});
 	});
 	
 	socket.on( 'join room request', function(){
@@ -167,13 +177,14 @@ io.sockets.on('connection', function (socket) {
 					guid: random_value,
 					ship_data: { id: user.obj.ship } } 
 				) )
-		})
-		// Not implemented yet
+		});
 	});
 });
 
 function find_the_best_room_server( user_id ){
 	for( var server_id in FRONT_END_SERVER_DATA.room_servers ){
+		// Just return the first room server.
+		// TODO: Find the first non-full one
 		return server_id;
 	}
 }
@@ -201,7 +212,7 @@ function login_user( username, user_id, socket ){
 			socket: socket 
 		};
 		
-		socket.broadcast.emit( 'new user', username );
+		socket.broadcast.emit( 'chat msg', ['SERVER', 'The user ' + username + ' has connected.'] );
 		socket.emit( 'login accepted', user_object );
 	}
 	else{

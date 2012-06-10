@@ -12,6 +12,17 @@
 				margin: 0px;
 				overflow: hidden;
 			}
+			
+			#main_page_chat_box{
+			    font-family:tahoma;
+			    font-size:12px;
+			    color:black;
+			    border:thin solid black;
+			    height: 125px;
+			    width: 400px;
+			    overflow-x:hidden;
+			    float:left;
+			}
 		</style>
 		<link type="text/css" href="css/ui-darkness/jquery-ui-1.8.18.custom.css" rel="stylesheet" />	
 		<script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
@@ -83,7 +94,13 @@
 				<center>
 					<button id="main_page_join_room_button">Join Fight</button>
 				</center>
+				<br>
+				<div id='main_page_chat_box'></div>
+				<input id='main_page_chat_input'></>
+				<button id="main_page_chat_send_button">Send</button>
+			
 			</div>
+			
 		</div>
 		
 		<div id='page3' name='game_page' style="display:none">
@@ -92,10 +109,13 @@
 		
 		<script>
 			// Here's jquery ui setup
-			//$('#part1')[0].style.display = 'block';
-			//$('#part2')[0].style.display = 'block';
-			
 			$('button').button();
+			//$( "#main_page_chat_box" ).slider();
+			document.getElementById('main_page_chat_box').addText = function( text )
+			{
+				this.innerHTML += text + '<br />';
+				this.scrollTop = this.scrollHeight;
+			}
 		</script>
 	</body>
 	
