@@ -1,3 +1,8 @@
+var PRE_ROUND_IDLE_GAME_STATE = 1;
+var PRE_ROUND_GAME_STATE = 2;
+var IN_ROUND_GAME_STATE = 3;
+var POST_ROUND_GAME_STATE = 4;
+
 var GAME_PAGE_DATA_CLASS = function(){
 	this.div;
 	this.stats;
@@ -25,6 +30,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 	this.stop_rendering = false;
 	this.ship_meshes = [];
 	
+	this.game_state = PRE_ROUND_IDLE_GAME_STATE;
 
 	this.create_ships_from_server_data = function( data ){
 		for( var client_id in data ){
@@ -151,7 +157,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 		var plane = new THREE.Mesh( new THREE.PlaneGeometry(1000,1000,20,20), new THREE.MeshBasicMaterial( { color:0x555555, wireframe:true} ) );
 		scene.add( plane );
 
-		//this.world.set_delete_projectile_callback( delete_projectile );
+		this.world.set_delete_projectile_callback( GAME_PAGE_delete_projectile );
 
 		// Save the objects
 		this.renderer = renderer;	
@@ -166,7 +172,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 		this.world.update_render();
 	}
 	
-	this.handle_keyboard_down = function( event ){
+	this.handle_keyboard_down = function( event ){	
 		var keyCode = 0;
 
 		if( event == null ){
@@ -177,7 +183,9 @@ var GAME_PAGE_DATA_CLASS = function(){
 			keyCode = event.keyCode;
 			event.preventDefault();
 		}
-		if(keyCode>=37 && keyCode <=40)	{
+		
+		if(( GAME_PAGE_DATA.game_state == IN_ROUND_GAME_STATE ) && 
+			( keyCode>=37 && keyCode <=40 ) )	{
 			var key = 40-keyCode;
 			var this_user_id = GAME_PAGE_DATA.this_ship_id;
 			
@@ -209,7 +217,8 @@ var GAME_PAGE_DATA_CLASS = function(){
 		
 		//console.log( 'handle_keyboard_up: ' + keyCode );
 		
-		if(keyCode>=37 && keyCode <=40)	{
+		if(( GAME_PAGE_DATA.game_state == IN_ROUND_GAME_STATE ) && 
+			( keyCode>=37 && keyCode <=40 ) )	{
 			var key = 40-keyCode;
 			var this_user_id = GAME_PAGE_DATA.this_ship_id;
 
@@ -224,7 +233,8 @@ var GAME_PAGE_DATA_CLASS = function(){
 			//console.log('Released the key. is forward = ' + GAME.world.ships[this_user_id].forward_value );
 			GAME_PAGE_DATA.socket.emit( 'ship control off', 40-keyCode );
 		}
-		if( keyCode == 32 || keyCode == 17 ){
+		if( ( GAME_PAGE_DATA.game_state == IN_ROUND_GAME_STATE ) && 
+			( keyCode == 32 || keyCode == 17 ) ){
 			GAME_PAGE_DATA.create_shoot( GAME_PAGE_DATA.this_ship_id );
 			GAME_PAGE_DATA.socket.emit( 'ship shot', [GAME_PAGE_DATA.this_ship_id] );
 		}
@@ -353,11 +363,19 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 		GAME_PAGE_DATA.create_shoot( data[0] );
 	});
 	
+	socket.on( 'update game state', function( data ){
+		GAME_PAGE_DATA.game_state = data;
+	});
+	
 	GAME_PAGE_DATA.socket = socket;
 }
 
 function GAME_PAGE_clear_extra_socket_events(){
 	
+}
+
+function GAME_PAGE_delete_projectile( id ){
+	GAME_PAGE_DATA.scene.remove( GAME_PAGE_DATA.world.projectiles[id].mesh );
 }
 
 function enter_game_page( game_data ){

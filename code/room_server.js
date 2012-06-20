@@ -20,11 +20,16 @@ var G2F_ADD_USER_RESPONSE = 2;
 var F2G_CONNECT_RESPONSE = 0;
 var F2G_ADD_USER_REQUEST = 1;
 
+var PRE_ROUND_IDLE_GAME_STATE = 1;
+var PRE_ROUND_GAME_STATE = 2;
+var IN_ROUND_GAME_STATE = 3;
+var POST_ROUND_GAME_STATE = 4;
+
 
 var ROOM_SERVER_DATA = {
+	game_state : PRE_ROUND_IDLE_GAME_STATE,
 	expected_users : {},
 	connected_users : {},
-	last_user_id : 0,
 	default_spawn_point : {x:0,y:0,z:0},
 	world : new WorldClass(),
 	last_time_value : new Date().getTime()
@@ -60,56 +65,60 @@ server_connection.on( 'data', function( data ){
 					delete ROOM_SERVER_DATA.expected_users[user_id];
 					
 					socket.emit( 'handshake accepted' );
+					socket.emit( 'update game state', ROOM_SERVER_DATA.game_state );
 					console.log( 'Handshake accepted by the server. Now sending game messages..' );
 					
-					var this_user_id = ROOM_SERVER_DATA.last_user_id++;
 					var new_ship = new ShipClass();
 					new_ship.mesh = ROOM_SERVER_DATA.connected_users[user_id].ship_data.id;
 					new_ship.set_position( ROOM_SERVER_DATA.default_spawn_point );
-					ROOM_SERVER_DATA.world.ships[this_user_id] = new_ship;
-					socket.set('id', this_user_id );
-					socket.emit( "connected", [this_user_id, ROOM_SERVER_DATA.world.ships] );
-					socket.broadcast.emit( 'connected', [this_user_id, ROOM_SERVER_DATA.world.ships] );	
-
+					ROOM_SERVER_DATA.world.ships[user_id] = new_ship;
+					socket.set('id', user_id );
+					socket.emit( "connected", [user_id, ROOM_SERVER_DATA.world.ships] );
+					socket.broadcast.emit( 'connected', [user_id, ROOM_SERVER_DATA.world.ships] );	
 				}
 			});
 			
 			socket.on( 'ship control on', function(key){ 
 				socket.get( 'id', function( err, user_id ){
-					//console.log( "ship control on. id=" + user_id );
-					var this_ship = ROOM_SERVER_DATA.world.ships[user_id];
-					var fwd = this_ship.get_forward();
-					var turn = this_ship.get_turn();
-					if(key == 0 ) this_ship.set_forward( -1 );
-					if(key == 1 ) this_ship.set_turn( 1 );
-					if(key == 2 ) this_ship.set_forward( 1 );
-					if(key == 3 ) this_ship.set_turn( -1 );
-					if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
-						//console.log( '=============BROADCAST================');
-						socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+					if( ROOM_SERVER_DATA.game_state == IN_ROUND_GAME_STATE ){
+						var this_ship = ROOM_SERVER_DATA.world.ships[user_id];
+						var fwd = this_ship.get_forward();
+						var turn = this_ship.get_turn();
+						if(key == 0 ) this_ship.set_forward( -1 );
+						if(key == 1 ) this_ship.set_turn( 1 );
+						if(key == 2 ) this_ship.set_forward( 1 );
+						if(key == 3 ) this_ship.set_turn( -1 );
+						if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
+							//console.log( '=============BROADCAST================');
+							socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+						}
 					}
 				});
 			});
 
 			socket.on( 'ship control off', function(key){ 
 				socket.get( 'id', function( err, user_id ){
-					var this_ship = ROOM_SERVER_DATA.world.ships[user_id];
-					var fwd = this_ship.get_forward();
-					var turn = this_ship.get_turn();
-					if(key == 0 ) this_ship.set_forward( 0 );
-					if(key == 1 ) this_ship.set_turn( 0 );
-					if(key == 2 ) this_ship.set_forward( 0 );
-					if(key == 3 ) this_ship.set_turn( 0 );
-					if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
-						//console.log( '=============BROADCAST================');
-						socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+					if( ROOM_SERVER_DATA.game_state == IN_ROUND_GAME_STATE ){
+						var this_ship = ROOM_SERVER_DATA.world.ships[user_id];
+						var fwd = this_ship.get_forward();
+						var turn = this_ship.get_turn();
+						if(key == 0 ) this_ship.set_forward( 0 );
+						if(key == 1 ) this_ship.set_turn( 0 );
+						if(key == 2 ) this_ship.set_forward( 0 );
+						if(key == 3 ) this_ship.set_turn( 0 );
+						if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
+							//console.log( '=============BROADCAST================');
+							socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
+						}
 					}
 				});
 			});
 		
 			socket.on( 'ship shot', function( data ){
-				socket.broadcast.emit( 'ship shoot event', data );
-				ROOM_SERVER_DATA.world.add_shot( data[0] );
+				if( ROOM_SERVER_DATA.game_state == IN_ROUND_GAME_STATE ){
+					socket.broadcast.emit( 'ship shoot event', data );
+					ROOM_SERVER_DATA.world.add_shot( data[0] );
+				}
 			});
 			
 			socket.on('disconnect', function() {
@@ -137,18 +146,50 @@ server_connection.on( 'data', function( data ){
 			address: hostname 
 		} ) );
 		
+		var change_game_state = function( new_state ){
+			// Notify clients about this
+			console.log( 'Changing game state to ' + new_state );
+			ROOM_SERVER_DATA.game_state = new_state;
+			io.sockets.emit( 'update game state', ROOM_SERVER_DATA.game_state );
+		};
+		
 		var sync_function = function(){
 			var current_time_value = new Date().getTime();
-			var dt = current_time_value - ROOM_SERVER_DATA.last_time_value;
-			if( dt > 0 ){
-				ROOM_SERVER_DATA.last_time_value = current_time_value;
-				ROOM_SERVER_DATA.world.tick( dt / 1000.0 );
-				io.sockets.emit('update', ROOM_SERVER_DATA.world.ships);
-				process.nextTick(sync_function);
+			//console.log( 'Current state: ' + ROOM_SERVER_DATA.game_state );
+			if( ROOM_SERVER_DATA.game_state == PRE_ROUND_IDLE_GAME_STATE ){
+				// Check number of users
+				if( Object.keys( ROOM_SERVER_DATA.connected_users ).length > 0 ){
+					change_game_state( PRE_ROUND_GAME_STATE );
+					ROOM_SERVER_DATA.last_time_value = current_time_value;
+				}
 			}
-			else{
-				setTimeout(sync_function, 1)
-			}	
+			else if( ROOM_SERVER_DATA.game_state == PRE_ROUND_GAME_STATE ){
+				// Count down
+				var dt = current_time_value - ROOM_SERVER_DATA.last_time_value;
+				if( dt > 10000 ){
+					ROOM_SERVER_DATA.last_time_value = current_time_value;
+					change_game_state( IN_ROUND_GAME_STATE );
+				}
+			}
+			else if( ROOM_SERVER_DATA.game_state == IN_ROUND_GAME_STATE ){
+				// Simulate
+				var dt = current_time_value - ROOM_SERVER_DATA.last_time_value;
+				if( dt > 0 ){
+					ROOM_SERVER_DATA.last_time_value = current_time_value;
+					ROOM_SERVER_DATA.world.tick( dt / 1000.0 );
+					io.sockets.emit('update', ROOM_SERVER_DATA.world.ships);
+					process.nextTick(sync_function);
+				}
+				else{
+					setTimeout(sync_function, 1)
+				}
+				return;
+			}
+			else if( ROOM_SERVER_DATA.game_state == POST_ROUND_GAME_STATE ){
+				
+			}
+			
+			setTimeout(sync_function, 1)
 		};
 		
 		process.nextTick(sync_function);
@@ -190,111 +231,3 @@ function http_handler (req, res) {
 		});
 	}
 }
-
-/*
-var url = require("url");
-var ShipClass = require( "./shared/ship" ).ShipClass;
-var WorldClass = require( "./shared/world" ).WorldClass;
-var ProjectileClass = require( "./shared/projectile" ).ProjectileClass;
-require( "./shared/custom_math" );
-var FlagClass = require( "./shared/flag" ).FlagClass;
-
-
-
-
-var GAME = {
-	last_user_id : 0,
-	default_spawn_point : {x:0,y:0,z:0},
-	world : new WorldClass()
-};
-
-var app = require('http').createServer(handler)
-var io = require('socket.io').listen(app)
-var fs = require('fs')
-
-console.log("start the stuff....");
-io.set( 'log level', 0 );
-
-io.sockets.on('connection', function (socket) {
-	
-	var this_user_id = GAME.last_user_id++;
-//	socket.set('id', this_user_id);	
-	console.log( "connected one.." );
-
-	var new_ship = new ShipClass();
-	new_ship.mesh = 1;
-	new_ship.set_position( GAME.default_spawn_point );
-	GAME.world.ships[this_user_id] = new_ship;
-	socket.set('id', this_user_id );
-	socket.emit( "connected", [this_user_id, GAME.world.ships] );
-	socket.broadcast.emit( 'connected', [this_user_id, GAME.world.ships] );	
-
-	socket.on( 'ship control on', function(key){ 
-		socket.get( 'id', function( err, user_id ){
-			//console.log( "ship control on. id=" + user_id );
-			var this_ship = GAME.world.ships[user_id];
-			var fwd = this_ship.get_forward();
-			var turn = this_ship.get_turn();
-			if(key == 0 ) this_ship.set_forward( -1 );
-			if(key == 1 ) this_ship.set_turn( 1 );
-			if(key == 2 ) this_ship.set_forward( 1 );
-			if(key == 3 ) this_ship.set_turn( -1 );
-			if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
-				//console.log( '=============BROADCAST================');
-				socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
-			}
-		});
-	});
-
-	socket.on( 'ship control off', function(key){ 
-		socket.get( 'id', function( err, user_id ){
-			var this_ship = GAME.world.ships[user_id];
-			var fwd = this_ship.get_forward();
-			var turn = this_ship.get_turn();
-			if(key == 0 ) this_ship.set_forward( 0 );
-			if(key == 1 ) this_ship.set_turn( 0 );
-			if(key == 2 ) this_ship.set_forward( 0 );
-			if(key == 3 ) this_ship.set_turn( 0 );
-			if( fwd != this_ship.get_forward() || turn != this_ship.get_turn() ){
-				//console.log( '=============BROADCAST================');
-				socket.broadcast.emit( 'ship control update', [user_id, this_ship.get_forward(), this_ship.get_turn()] );
-			}
-		});
-	});
-
-	socket.on( 'ship shot', function( data ){
-		socket.broadcast.emit( 'ship shoot event', data );
-		GAME.world.add_shot( data[0] );
-	});
-	
-	socket.on('disconnect', function() {
-		socket.get( 'id', function( err, user_id ){
-			delete GAME.world.ships[user_id];
-			console.log( "broadcasting disconnect message. Client id=" + user_id );
-			socket.broadcast.emit( 'disconnected', user_id );
-		});
-	});
-});
-
-app.listen(8000);
-
-var last_time_value = new Date().getTime();
-
-var sync_function = function(){
-	var current_time_value = new Date().getTime();
-	var dt = current_time_value - last_time_value;
-	if( dt > 0 ){
-		last_time_value = current_time_value;
-		GAME.world.tick( dt / 1000.0 );
-		io.sockets.emit('update', GAME.world.ships);
-		process.nextTick(sync_function);
-	}
-	else{
-		setTimeout(sync_function, 1)
-	}	
-}
-
-process.nextTick(sync_function);
-//setInterval( sync_function, 100 );
-
-*/
