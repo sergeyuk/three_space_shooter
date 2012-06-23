@@ -25,12 +25,44 @@ var PRE_ROUND_GAME_STATE = 2;
 var IN_ROUND_GAME_STATE = 3;
 var POST_ROUND_GAME_STATE = 4;
 
+var default_spawn_points = [ 
+	{x:0,y:0,z:0} 
+];
+
+function pre_allocate_spawn_points( steps_num ){
+	console.log( 'pre allocating default spawn points' );
+	var distance_multiplier = 10;
+	
+	for( var i = 1; i <= steps_num; i++ ){
+		var value = distance_multiplier * i;
+		default_spawn_points.push( {x:value,y:0,z:0} );
+		default_spawn_points.push( {x:-value,y:0,z:0} );
+		
+		default_spawn_points.push( {x:0,y:value,z:0} );
+		default_spawn_points.push( {x:0,y:-value,z:0} );
+		
+		default_spawn_points.push( {x:value,y:value,z:0} );
+		default_spawn_points.push( {x:value,y:-value,z:0} );
+		
+		default_spawn_points.push( {x:-value,y:value,z:0} );
+		default_spawn_points.push( {x:-value,y:-value,z:0} );
+	}	
+}
+pre_allocate_spawn_points( 2 );
+
+function get_available_spawn_point(){
+	// TODO: add a list of available spawn points
+	var index = Math.floor((Math.random()*default_spawn_points.length));
+	console.log( 'get available spawn point. Index: ' + index );
+	console.log( default_spawn_points[index] );
+	return default_spawn_points[index]; 
+}
 
 var ROOM_SERVER_DATA = {
 	game_state : PRE_ROUND_IDLE_GAME_STATE,
 	expected_users : {},
 	connected_users : {},
-	default_spawn_point : {x:0,y:0,z:0},
+	//default_spawn_point : {x:0,y:0,z:0},
 	world : new WorldClass(),
 	last_time_value : new Date().getTime()
 };
@@ -70,7 +102,7 @@ server_connection.on( 'data', function( data ){
 					
 					var new_ship = new ShipClass();
 					new_ship.mesh = ROOM_SERVER_DATA.connected_users[user_id].ship_data.id;
-					new_ship.set_position( ROOM_SERVER_DATA.default_spawn_point );
+					new_ship.set_position( get_available_spawn_point() );
 					ROOM_SERVER_DATA.world.ships[user_id] = new_ship;
 					socket.set('id', user_id );
 					socket.emit( "connected", [user_id, ROOM_SERVER_DATA.world.ships] );
