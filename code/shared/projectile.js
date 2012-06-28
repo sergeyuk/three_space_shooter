@@ -7,8 +7,13 @@ var ProjectileClass = function() {
 	this.max_len;
 	this.start;
 	this.mesh;
+	this.type;
+	this.to_be_deleted = false;
 
 	this.tick = function( dt ){
+		if( this.to_be_deleted ){
+			return 1;
+		}
 		this.pos.x += ( this.dir.x * this.vel * dt ); 
 		this.pos.y += ( this.dir.y * this.vel * dt );
 		this.pos.z += ( this.dir.z * this.vel * dt );

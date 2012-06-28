@@ -20,7 +20,11 @@ var ShipClass = function(){
 	this.forward_value	= 0;
 	this.turn_value		= 0;
 
+	this.life = 100;
+
 	this.particle_emitter;
+	
+	this.life;
 	
 	this.set_updated_angle = function( new_angle ){
 		//this.delta_angle = new_angle - this.angle;

@@ -45,6 +45,16 @@ var WorldClass = function(){
 	this.set_ship_projectile_collision_callback = function( callback ){ this.on_ship_projectile_collision_callback = callback; }
 	this.set_delete_projectile_callback 		= function( callback ){ this.on_delete_projectile_callback = callback; }
 	
+	this.projectiles_damage_table = { 1 : 10 };
+	
+	this.get_damage_for_projectile = function( proj ){
+		var type = proj.type;
+		if( this.projectiles_damage_table.hasOwnProperty( type ) ){
+			return this.projectiles_damage_table[type];
+		}
+		return 0;
+	}
+	
 	this.tick_collision = function( dt ){
 		var ships = this.ships;
 		var ship_ids = [];
@@ -76,8 +86,17 @@ var WorldClass = function(){
 				if( projectile.owner_id != ship1_id ){
 					var sq_distance = compute_sq_distance( ship1.get_position(), projectile.pos );
 					if( sq_distance < 4 ){
-						this.onShipProjectileCollisionCallback ? this.onShipProjectileCollisionCallback( ship1, projectile ) : 0;
+						this.on_ship_projectile_collision_callback ? this.on_ship_projectile_collision_callback( ship1, projectile ) : 0;
+						var damage = this.get_damage_for_projectile( projectile );
+						if( damage > ship1.life ){
+							ship1.life = 0;
+						}
+						else{
+							ship1.life -= damage;
+						}
+						
 						console.log( 'ship/projectile collision' );
+						projectile.to_be_deleted = true;
 						break;
 					}
 				}

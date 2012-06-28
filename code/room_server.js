@@ -67,6 +67,12 @@ var ROOM_SERVER_DATA = {
 	last_time_value : new Date().getTime()
 };
 
+function init_game_world(){
+	ROOM_SERVER_DATA.world.onShipProjectileCollisionCallback = function( ship, proj ){
+		
+	}
+}
+
 var server_connection = require('net').connect( 8124, function(){
 	server_connection.write( JSON.stringify( { message_type: G2F_CONNECT_REQUEST }) );
 });
