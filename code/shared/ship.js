@@ -1,3 +1,5 @@
+var SHIP_STATUS_ALIVE = 0;
+var SHIP_STATUS_DEAD = 1;
 
 var ShipClass = function(){
 	this.material;
@@ -24,7 +26,7 @@ var ShipClass = function(){
 
 	this.particle_emitter;
 	
-	this.life;
+	this.status = SHIP_STATUS_ALIVE;
 	
 	this.set_updated_angle = function( new_angle ){
 		//this.delta_angle = new_angle - this.angle;
@@ -145,6 +147,10 @@ var ShipClass = function(){
 	}
 
 	this.tick = function( dt ){
+		if( this.status != SHIP_STATUS_ALIVE ){
+			this.forward_value	= 0;
+			this.turn_value		= 0;			
+		}
 		this.tick_rotation( dt );		
 		this.tick_position( dt );
 	}

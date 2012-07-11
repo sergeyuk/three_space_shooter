@@ -350,6 +350,7 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 				client_ship.set_updated_angle( server_ship.angle );
 				client_ship.angular_vel		= server_ship.angular_vel;
 				client_ship.life = server_ship.life;
+				client_ship.status = server_ship.status;
 			}
 		});
 		

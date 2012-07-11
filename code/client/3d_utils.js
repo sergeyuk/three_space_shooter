@@ -34,16 +34,19 @@ function create_standard_diffuse_material( diffuse_texture ){
 function load_ship_geometry( ship_mesh_id, callback ){
 	var mesh_paths = [
 		"obj/ship1/Ship_01.js",
+		"obj/ship2/Ship_02.js",
 		"obj/ship3/Ship_03.js"
 	];
 	
 	var diffuse_texture_paths = [
 		"obj/ship1/Ship_01R.jpg",
+		"obj/ship2/Ship_02_R.jpg",
 		"obj/ship3/Ship_03_R.jpg"		 
 	];
 	
 	var normal_map_paths = [
 		"obj/ship1/Ship_01_NRM.jpg",
+		"obj/ship2/Ship_02_NRM.jpg",
 		"obj/ship3/Ship_03_NRM.jpg"
 	];
 	

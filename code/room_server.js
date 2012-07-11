@@ -215,6 +215,7 @@ server_connection.on( 'data', function( data ){
 				if( dt > 0 ){
 					ROOM_SERVER_DATA.last_time_value = current_time_value;
 					ROOM_SERVER_DATA.world.tick( dt / 1000.0 );
+					ROOM_SERVER_DATA.post_tick();
 					io.sockets.emit('update', ROOM_SERVER_DATA.world.ships);
 					process.nextTick(sync_function);
 				}
@@ -248,6 +249,9 @@ server_connection.on( 'data', function( data ){
 	}
 });
 
+ROOM_SERVER_DATA.post_tick = function(){
+	
+}
 
 function http_handler (req, res) {
 	console.log( "HTTP RQ: " );

@@ -6,7 +6,7 @@ var CREATE_NEW_USER_PAGE_DATA_CLASS = function(){
 	this.last_time_t = 0;
 	this.stop_rendering = false;
 	this.ship_meshes = [];
-	this.ships_num_total = 2;
+	this.ships_num_total = 3;
 	this.ships_left_to_load = this.ships_num_total;
 	this.current_ship = 1;
 	
