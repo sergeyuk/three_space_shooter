@@ -77,6 +77,13 @@ var server_connection = require('net').connect( 8124, function(){
 	server_connection.write( JSON.stringify( { message_type: G2F_CONNECT_REQUEST }) );
 });
 
+// Sends events!
+function respawn_user( user_id ){
+	var ship = ROOM_SERVER_DATA.world.ships[user_id];
+	ship.set_position( get_available_spawn_point() );
+	ship.set_alive();
+	io.sockets.emit('respawn', [user_id, ship]);
+}
 
 server_connection.on( 'data', function( data ){
 	console.log( 'server_connection.on(data: ' + data );	
@@ -108,11 +115,13 @@ server_connection.on( 'data', function( data ){
 					
 					var new_ship = new ShipClass();
 					new_ship.mesh = ROOM_SERVER_DATA.connected_users[user_id].ship_data.id;
-					new_ship.set_position( get_available_spawn_point() );
 					ROOM_SERVER_DATA.world.ships[user_id] = new_ship;
+					
 					socket.set('id', user_id );
 					socket.emit( "connected", [user_id, ROOM_SERVER_DATA.world.ships] );
-					socket.broadcast.emit( 'connected', [user_id, ROOM_SERVER_DATA.world.ships] );	
+					socket.broadcast.emit( 'connected', [user_id, ROOM_SERVER_DATA.world.ships] );
+					
+					respawn_user( user_id );
 				}
 			});
 			

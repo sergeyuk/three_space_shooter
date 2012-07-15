@@ -26,12 +26,20 @@ var ShipClass = function(){
 
 	this.particle_emitter;
 	
-	this.status = SHIP_STATUS_ALIVE;
+	this.status = SHIP_STATUS_DEAD; // Dead by default, requires 'spawn'
 	
 	this.set_updated_angle = function( new_angle ){
 		//this.delta_angle = new_angle - this.angle;
 		this.angle = new_angle;
 	};
+
+	this.is_alive = function(){
+		return this.status == SHIP_STATUS_ALIVE;
+	}
+
+	this.set_alive = function(){
+		this.status = SHIP_STATUS_ALIVE;
+	}
 
 	this.apply_angle_correction = function( dt ){
 		if( this.delta_angle != 0 ){

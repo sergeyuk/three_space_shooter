@@ -49,8 +49,9 @@ var GAME_PAGE_DATA_CLASS = function(){
 		
 		load_ship_geometry( mesh_id, function( geometry, material ){
 			new_ship.mesh = new THREE.Mesh( geometry, material );
+			new_ship.mesh.visible = new_ship.is_alive();
 			that.scene.add(new_ship.mesh);
-			new_ship.mesh.position.set( new_ship.pos.x, new_ship.pos.y, new_ship.pos.z );
+			//new_ship.mesh.position.set( new_ship.pos.x, new_ship.pos.y, new_ship.pos.z );
 			
 			//new_ship.particle_emitter = create_particle_system();
 			//new_ship.particle_emitter.offset = new Three.Vector3();
@@ -188,6 +189,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 			( keyCode>=37 && keyCode <=40 ) )	{
 			var key = 40-keyCode;
 			var this_user_id = GAME_PAGE_DATA.this_ship_id;
+			var this_ship = GAME_PAGE_DATA.world.ships[this_user_id];
 			
 			var forward = undefined;
 			var turn = undefined;
@@ -197,7 +199,10 @@ var GAME_PAGE_DATA_CLASS = function(){
 			if(key == 2 ) forward = 1;
 			if(key == 3 ) turn = -1;
 			
-			handle_ship_control( GAME_PAGE_DATA.world.ships[this_user_id], forward, turn );
+			if( this_ship.is_alive() )
+			{
+				handle_ship_control( this_ship, forward, turn );
+			}			
 			
 			GAME_PAGE_DATA.socket.emit( 'ship control on', 40-keyCode );
 		}
@@ -221,21 +226,31 @@ var GAME_PAGE_DATA_CLASS = function(){
 			( keyCode>=37 && keyCode <=40 ) )	{
 			var key = 40-keyCode;
 			var this_user_id = GAME_PAGE_DATA.this_ship_id;
-
+			var this_ship = GAME_PAGE_DATA.world.ships[this_user_id];
+			
 			var forward = undefined;
 			var turn = undefined;
 			
 			if(key == 0 || key == 2 ) forward = 0;
 			if(key == 1 || key == 3 ) turn = 0;
 			
-			handle_ship_control( GAME_PAGE_DATA.world.ships[this_user_id], forward, turn );
+			if( this_ship.is_alive() )
+			{
+				handle_ship_control( GAME_PAGE_DATA.world.ships[this_user_id], forward, turn );
+			}
 			
 			//console.log('Released the key. is forward = ' + GAME.world.ships[this_user_id].forward_value );
 			GAME_PAGE_DATA.socket.emit( 'ship control off', 40-keyCode );
 		}
 		if( ( GAME_PAGE_DATA.game_state == IN_ROUND_GAME_STATE ) && 
 			( keyCode == 32 || keyCode == 17 ) ){
-			GAME_PAGE_DATA.create_shoot( GAME_PAGE_DATA.this_ship_id );
+			var this_user_id = GAME_PAGE_DATA.this_ship_id;
+			var this_ship = GAME_PAGE_DATA.world.ships[this_user_id];
+			if( this_ship.is_alive() )
+			{	
+				GAME_PAGE_DATA.create_shoot( GAME_PAGE_DATA.this_ship_id );
+			}
+			
 			GAME_PAGE_DATA.socket.emit( 'ship shot', [GAME_PAGE_DATA.this_ship_id] );
 		}
 	}
@@ -299,6 +314,31 @@ function GAME_PAGE_DATA_animate(){
 
 var GAME_PAGE_DATA = new GAME_PAGE_DATA_CLASS;
 
+function update_client_ship_from_server_one( ship_id, server_ship, is_update ){
+	var client_ship = GAME_PAGE_DATA.world.ships[ship_id];
+	if( is_update ){
+		client_ship.set_updated_position( server_ship.pos );
+		client_ship.set_updated_angle( server_ship.angle );
+	}
+	else{
+		client_ship.pos = server_ship.pos;
+		client_ship.angle = server_ship.angle;
+	}
+	
+	client_ship.vel			= server_ship.vel;
+	client_ship.acc 		= server_ship.acc;
+	client_ship.forward_value	= server_ship.forward_value;
+	client_ship.turn_value 		= server_ship.turn_value;
+	client_ship.angular_vel		= server_ship.angular_vel;
+	client_ship.life = server_ship.life;
+	client_ship.status = server_ship.status;
+	
+	if( client_ship.mesh )
+	{
+		client_ship.mesh.visible = client_ship.is_alive();
+		//console.log( 'Made ship visible: ' + client_ship.mesh.visible );
+	}	
+}
 
 function GAME_PAGE_init_extra_socket_events( game_data ){
 	var address = game_data.address;
@@ -339,20 +379,17 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 	});
 
 	socket.on( 'update', function( data ){
-			for( ship_id in data ){
-				var server_ship = data[ship_id];
-				var client_ship = GAME_PAGE_DATA.world.ships[ship_id];
-				client_ship.set_updated_position( server_ship.pos );
-				client_ship.vel			= server_ship.vel;
-				client_ship.acc 		= server_ship.acc;
-				client_ship.forward_value	= server_ship.forward_value;
-				client_ship.turn_value 		= server_ship.turn_value;
-				client_ship.set_updated_angle( server_ship.angle );
-				client_ship.angular_vel		= server_ship.angular_vel;
-				client_ship.life = server_ship.life;
-				client_ship.status = server_ship.status;
-			}
-		});
+		for( ship_id in data ){
+			var server_ship = data[ship_id];
+			update_client_ship_from_server_one( ship_id, server_ship, true );
+		}
+	});
+	
+	socket.on( 'respawn', function( data ) {
+		var user_id = data[0];
+		var server_ship = data[1];
+		update_client_ship_from_server_one( user_id, server_ship, false );
+	});
 		
 	socket.on( 'ship control update', function( data ){
 		var ship_id = data[0];
