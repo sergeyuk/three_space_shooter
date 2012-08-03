@@ -25,7 +25,20 @@
 			}
 			#score {
 				color:#00ff00;
-				top:1em;
+				top:0em;
+				width: 100%;
+				font-size:3em;
+				font-variant:small-caps;
+				font-weight:bold;
+				position:absolute;
+				z-index:100;
+				text-align: right;
+				text-shadow: #000 0px 0px 10px;
+				display:none;
+			}
+			#life{
+				color:#ff0000;
+				bottom:1em;
 				width: 100%;
 				font-size:3em;
 				font-variant:small-caps;
@@ -119,6 +132,9 @@
 		<div id='page3' name='game_page' style="display:none">
 			<div id="score">
 				<span id="scoretext">Score: 0</span>
+			</div>
+			<div id="life">
+				<span id="lifetext">Life: 100</span>
 			</div>
 		</div>
 		

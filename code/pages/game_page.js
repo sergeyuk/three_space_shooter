@@ -344,7 +344,11 @@ function update_client_ship_from_server_one( ship_id, server_ship, is_update ){
 	{
 		client_ship.mesh.visible = client_ship.is_alive();
 		//console.log( 'Made ship visible: ' + client_ship.mesh.visible );
-	}	
+	}
+	
+	if( ship_id == GAME_PAGE_DATA.this_ship_id ){
+		$( "#lifetext" )[0].textContent  = "Life: " + client_ship.life;
+	}
 }
 
 function GAME_PAGE_init_extra_socket_events( game_data ){
@@ -433,6 +437,7 @@ function enter_game_page( game_data ){
 	window.addEventListener('keyup',GAME_PAGE_DATA.handle_keyboard_up,false);
 
 	$( "#score" ).css("display", "block" );
+	$( "#life" ).css("display", "block" );
 
 	var div = document.createElement( 'div' );
 	document.getElementsByName( 'game_page' )[0].appendChild( div );
@@ -457,5 +462,6 @@ function leave_game_page(){
 	delete GAME_PAGE_DATA.div;
 	
 	$( "#score" ).css("display", "none" );
+	$( "#life" ).css("display", "none" );
 }
 
