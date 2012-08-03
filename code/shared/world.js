@@ -26,7 +26,7 @@ var WorldClass = function(){
 			var newArr = new Array();for (k in this.projectiles) if(this.projectiles[k]) newArr.push(this.projectiles[k])
 			this.projectiles = newArr;
 			var new_len = this.projectiles.length;
-			console.log( 'cleared some projectiles. old len: ' + old_len + ', new len: ' + new_len );
+			//console.log( 'cleared some projectiles. old len: ' + old_len + ', new len: ' + new_len );
 		}
 		
 		for( var i = 0; i < this.flags.length; i++ ){
@@ -69,6 +69,10 @@ var WorldClass = function(){
 			var ship1_id = ship_ids[i];
 			var ship1 = ships[ ship1_id ];
 			
+			if( !ship1.is_alive() ){
+				continue;
+			}
+			
 			for( var j = i + 1; j < total_ships_num; j++ ){
 				var ship2 = ships[ ship_ids[j] ];
 				var sq_distance = compute_sq_distance( ship1.get_position(), ship2.get_position() );
@@ -76,7 +80,7 @@ var WorldClass = function(){
 				
 				if( sq_distance < 4 ){
 					this.onShipShipCollisionCallback ? this.onShipShipCollisionCallback( ship1, ship2 ) : 0;
-					console.log( 'ship/ship collision happened.' );
+					//console.log( 'ship/ship collision happened.' );
 					break;
 				}
 			}
@@ -86,7 +90,6 @@ var WorldClass = function(){
 				if( projectile.owner_id != ship1_id ){
 					var sq_distance = compute_sq_distance( ship1.get_position(), projectile.pos );
 					if( sq_distance < 4 ){
-						this.on_ship_projectile_collision_callback ? this.on_ship_projectile_collision_callback( ship1, projectile ) : 0;
 						var damage = this.get_damage_for_projectile( projectile );
 						if( damage > ship1.life ){
 							ship1.life = 0;
@@ -95,7 +98,9 @@ var WorldClass = function(){
 							ship1.life -= damage;
 						}
 						
-						console.log( 'ship/projectile collision' );
+						this.on_ship_projectile_collision_callback ? this.on_ship_projectile_collision_callback( ship1, projectile ) : 0;
+						
+						//console.log( 'ship/projectile collision. new ship life: ' + ship1.life );
 						projectile.to_be_deleted = true;
 						break;
 					}
@@ -128,6 +133,7 @@ var WorldClass = function(){
 		p.max_len = 300;// depends on type
 		p.owner_id = owner_id;
 		p.start = {x:pos.x, y:pos.y, z:pos.z};
+		p.type = type;
 		
 		this.projectiles.push( p );
 	}

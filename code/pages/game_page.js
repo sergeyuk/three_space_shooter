@@ -31,7 +31,8 @@ var GAME_PAGE_DATA_CLASS = function(){
 	this.ship_meshes = [];
 	
 	this.game_state = PRE_ROUND_IDLE_GAME_STATE;
-
+	this.score = 0;
+	
 	this.create_ships_from_server_data = function( data ){
 		for( var client_id in data ){
 			this.world.ships[client_id] = new ShipClass();
@@ -251,8 +252,14 @@ var GAME_PAGE_DATA_CLASS = function(){
 				GAME_PAGE_DATA.create_shoot( GAME_PAGE_DATA.this_ship_id );
 			}
 			
-			GAME_PAGE_DATA.socket.emit( 'ship shot', [GAME_PAGE_DATA.this_ship_id] );
+			GAME_PAGE_DATA.socket.emit( 'ship shot' );
 		}
+	}
+	
+	this.set_score = function( score ){
+		console.log( "Updated score: " + score )
+		this.score = score;
+		$( "#scoretext" )[0].textContent  = "Score: " + score;
 	}
 }
 
@@ -385,6 +392,10 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 		}
 	});
 	
+	socket.on( 'update score', function( data ){
+		GAME_PAGE_DATA.set_score( data );
+	})
+	
 	socket.on( 'respawn', function( data ) {
 		var user_id = data[0];
 		var server_ship = data[1];
@@ -421,6 +432,8 @@ function enter_game_page( game_data ){
 	window.addEventListener('keydown',GAME_PAGE_DATA.handle_keyboard_down,false);
 	window.addEventListener('keyup',GAME_PAGE_DATA.handle_keyboard_up,false);
 
+	$( "#score" ).css("display", "block" );
+
 	var div = document.createElement( 'div' );
 	document.getElementsByName( 'game_page' )[0].appendChild( div );
 	GAME_PAGE_DATA.div = div;
@@ -442,4 +455,7 @@ function leave_game_page(){
 	
 	document.getElementsByName( 'game_page' )[0].removeChild( GAME_PAGE_DATA.div );
 	delete GAME_PAGE_DATA.div;
+	
+	$( "#score" ).css("display", "none" );
 }
+

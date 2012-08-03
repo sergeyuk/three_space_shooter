@@ -36,9 +36,15 @@ var ShipClass = function(){
 	this.is_alive = function(){
 		return this.status == SHIP_STATUS_ALIVE;
 	}
-
+	
+	this.set_dead = function(){
+		this.status = SHIP_STATUS_DEAD;
+		this.life = 0;
+	}
+	
 	this.set_alive = function(){
 		this.status = SHIP_STATUS_ALIVE;
+		this.life = 100;
 	}
 
 	this.apply_angle_correction = function( dt ){
