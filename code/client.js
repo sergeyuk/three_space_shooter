@@ -29,12 +29,16 @@ var CLIENT_STATE = new function(){
 };
 
 var SOUNDS_TO_LOAD = [
-    ['Fire', "sound/Fire.ogg"]
+    ['Explosion', "sound/Explosion.ogg"],
+    ['Fire', "sound/Fire.ogg"],
+    ['Flight', "sound/Flight.ogg"],
+    ['GUI_Buttons', "sound/GUI_Buttons.ogg"],
+    ['GUI_Start', "sound/GUI_Start.ogg"],
+    ['Hit', "sound/Hit.ogg"],
+    ['Respawn', "sound/Respawn.ogg"],
+    ['Start', "sound/Start.ogg"],
+    ['Stop', "sound/Stop.ogg"]    
 ];
-
-/*var OneShotSound = function( sound_name ){
-    var 
-}*/
 
 var SOUND_MANAGER = new function(){
     this.context;

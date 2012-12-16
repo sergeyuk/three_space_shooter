@@ -96,18 +96,7 @@ var GAME_PAGE_DATA_CLASS = function(){
 		this.create_projectile_mesh( this.world.projectiles.length - 1 );	
 		
 		var this_ship = this.world.ships[owner_ship_id];
-        var pos = this_ship.get_position();
-        var dir = this_ship.get_direction();
-        
-		SOUND_MANAGER.play_sound( 'Fire', false, pos.x, pos.y, pos.z );
-		
-		//this.fire_instance = createjs.SoundJS.play( 'Fire', 'any'/*SoundJS.INTERUPT_LATE*/ );
-
-        //if (this.fire_instance == null || this.fire_instance.playState == createjs.SoundJS.PLAY_FAILED) { alert('instance is null or bad state for fire_instance'); }
-        //this.fire_instance.onPlayFailed = function(){ alert('onPlayFailed for fire_instance')};
-        //instance.onComplete = handleSoundComplete;
-        //instance.onPlayInterrupted = handlePlayFailed;
-
+		play_sound_at_ship( this_ship, 'Fire', false );
 	}
 
 	this.create_projectile_mesh = function( projectile_id ){
@@ -176,6 +165,8 @@ var GAME_PAGE_DATA_CLASS = function(){
 		var plane = new THREE.Mesh( new THREE.PlaneGeometry(1000,1000,20,20), new THREE.MeshBasicMaterial( { color:0x555555, wireframe:true} ) );
 		scene.add( plane );
 
+        this.world.set_ship_ship_collision_callback( GAME_PAGE_ship_ship_collision );
+        this.world.set_ship_projectile_collision_callback( GAME_PAGE_ship_projectile_collision );
 		this.world.set_delete_projectile_callback( GAME_PAGE_delete_projectile );
 
 		// Save the objects
@@ -351,6 +342,8 @@ var GAME_PAGE_DATA = new GAME_PAGE_DATA_CLASS;
 
 function update_client_ship_from_server_one( ship_id, server_ship, is_update ){
 	var client_ship = GAME_PAGE_DATA.world.ships[ship_id];
+	var was_alive = client_ship.is_alive();
+	
 	if( is_update ){
 		client_ship.set_updated_position( server_ship.pos );
 		client_ship.set_updated_angle( server_ship.angle );
@@ -370,8 +363,15 @@ function update_client_ship_from_server_one( ship_id, server_ship, is_update ){
 	
 	if( client_ship.mesh )
 	{
-		client_ship.mesh.visible = client_ship.is_alive();
+	    var is_alive = client_ship.is_alive();
+		client_ship.mesh.visible = is_alive;
 		//console.log( 'Made ship visible: ' + client_ship.mesh.visible );
+		if( was_alive && !is_alive ){
+		    play_sound_at_ship( client_ship, 'Explosion', false );
+		}
+		else if( !was_alive && is_alive ){
+		    play_sound_at_ship( client_ship, 'Respawn', false );
+		}
 	}
 	
 	if( ship_id == GAME_PAGE_DATA.this_ship_id ){
@@ -452,12 +452,26 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 	GAME_PAGE_DATA.socket = socket;
 }
 
+function play_sound_at_ship( ship, sound_name, loop ){
+    var pos = ship.get_position();
+    var dir = ship.get_direction();
+    SOUND_MANAGER.play_sound( sound_name, loop, pos.x, pos.y, pos.z );
+}
+
 function GAME_PAGE_clear_extra_socket_events(){
 	
 }
 
 function GAME_PAGE_delete_projectile( id ){
 	GAME_PAGE_DATA.scene.remove( GAME_PAGE_DATA.world.projectiles[id].mesh );
+}
+
+function GAME_PAGE_ship_ship_collision( ship1, ship2 ){
+    
+}
+
+function GAME_PAGE_ship_projectile_collision( ship, projectile ){
+    play_sound_at_ship( ship, 'Hit', false );
 }
 
 function enter_game_page( game_data ){
