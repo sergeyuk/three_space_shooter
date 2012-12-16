@@ -1,7 +1,7 @@
 /*
  * TODO:
  * 	* Let the room server know if the expected client disconnected 
- *  
+ *  * Remove room server socket if it crashed!!!!  
  */
  
 var url = require("url");

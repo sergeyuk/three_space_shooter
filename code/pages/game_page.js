@@ -33,6 +33,9 @@ var GAME_PAGE_DATA_CLASS = function(){
 	this.game_state = PRE_ROUND_IDLE_GAME_STATE;
 	this.score = 0;
 	
+	//sfx
+	this.fire_instance = null;
+	
 	this.create_ships_from_server_data = function( data ){
 		for( var client_id in data ){
 			this.world.ships[client_id] = new ShipClass();
@@ -91,6 +94,20 @@ var GAME_PAGE_DATA_CLASS = function(){
 	this.create_shoot = function( owner_ship_id ){
 		this.world.add_shot( owner_ship_id );
 		this.create_projectile_mesh( this.world.projectiles.length - 1 );	
+		
+		var this_ship = this.world.ships[owner_ship_id];
+        var pos = this_ship.get_position();
+        var dir = this_ship.get_direction();
+        
+		SOUND_MANAGER.play_sound( 'Fire', false, pos.x, pos.y, pos.z );
+		
+		//this.fire_instance = createjs.SoundJS.play( 'Fire', 'any'/*SoundJS.INTERUPT_LATE*/ );
+
+        //if (this.fire_instance == null || this.fire_instance.playState == createjs.SoundJS.PLAY_FAILED) { alert('instance is null or bad state for fire_instance'); }
+        //this.fire_instance.onPlayFailed = function(){ alert('onPlayFailed for fire_instance')};
+        //instance.onComplete = handleSoundComplete;
+        //instance.onPlayInterrupted = handlePlayFailed;
+
 	}
 
 	this.create_projectile_mesh = function( projectile_id ){
@@ -261,6 +278,17 @@ var GAME_PAGE_DATA_CLASS = function(){
 		this.score = score;
 		$( "#scoretext" )[0].textContent  = "Score: " + score;
 	}
+	
+	this.update_sound = function(){
+	    if( GAME_PAGE_DATA.this_ship_id != -1 ){
+    	    var this_user_id = GAME_PAGE_DATA.this_ship_id;
+            var this_ship = GAME_PAGE_DATA.world.ships[this_user_id];
+            var pos = this_ship.get_position();
+            var dir = this_ship.get_direction();
+            var up = {x:0,y:0,z:1};
+            SOUND_MANAGER.update_listener( pos, dir, up );
+        }           
+	}
 }
 
 function handle_ship_control( ship, forward, turn ){
@@ -314,7 +342,7 @@ function GAME_PAGE_DATA_animate(){
 		GAME_PAGE_DATA.renderer.render( GAME_PAGE_DATA.particlesScene, GAME_PAGE_DATA.camera );		
 		
 		GAME_PAGE_DATA.stats.update();
-		
+		GAME_PAGE_DATA.update_sound();
 		requestAnimationFrame( GAME_PAGE_DATA_animate );		
 	}
 }

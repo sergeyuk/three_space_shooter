@@ -111,9 +111,9 @@ server_connection.on( 'data', function( data ){
 				var guid = data.guid;
 				console.log( "Expected users: " );
 				console.log( ROOM_SERVER_DATA.expected_users );
-				console.log( "ROOM_SERVER_DATA.expected_users[ " + user_id + "] => " );
+				console.log( "ROOM_SERVER_DATA.expected_users[" + user_id + "] => " );
 				console.log( ROOM_SERVER_DATA.expected_users[user_id] );
-				if( ROOM_SERVER_DATA.expected_users[user_id].guid == guid ){
+				if( ROOM_SERVER_DATA.expected_users.hasOwnProperty( user_id ) && ROOM_SERVER_DATA.expected_users[user_id].guid == guid ){
 					// Make this user as connected
 					ROOM_SERVER_DATA.connected_users[user_id] = ROOM_SERVER_DATA.expected_users[user_id];
 					delete ROOM_SERVER_DATA.expected_users[user_id];
@@ -132,6 +132,9 @@ server_connection.on( 'data', function( data ){
 					
 					respawn_user( user_id );
 					ROOM_SERVER_DATA.connected_users[user_id].socket = socket;
+				}
+				else{
+				    socket.disconnect();
 				}
 			});
 			
