@@ -278,13 +278,24 @@ var GAME_PAGE_DATA_CLASS = function(){
             var dir = this_ship.get_direction();
             var up = {x:0,y:0,z:1};
             SOUND_MANAGER.update_listener( pos, dir, up );
+        }
+        
+        for( var ship_id in GAME_PAGE_DATA.world.ships ){
+            if( GAME_PAGE_DATA.world.ships.hasOwnProperty( ship_id ) ){
+                var ship = GAME_PAGE_DATA.world.ships[ship_id];
+                if( ship.sound ){
+                    var pos = ship.get_position();
+                    ship.sound.panner.setPosition( pos.x, pos.y, pos.z );
+                }
+            }
         }           
 	}
 }
 
 function handle_ship_control( ship, forward, turn ){
-	if( forward !== undefined ) 
+	if( forward !== undefined ){ 
 		ship.set_forward( forward );
+	}
 	if( turn !== undefined ) 	
 		ship.set_turn( turn );
 	
@@ -296,6 +307,14 @@ function handle_ship_control( ship, forward, turn ){
 			ship.particle_emitter.emitter().stop();
 		}
 	}
+    if( forward ){
+        ship.sound = play_sound_at_ship( ship, 'Flight', true );
+    }
+    else{
+        if( ship.sound ){
+            ship.sound.sound.noteOff(0);
+        }
+    }
 }
 	
 function GAME_PAGE_DATA_animate(){
@@ -455,7 +474,7 @@ function GAME_PAGE_init_extra_socket_events( game_data ){
 function play_sound_at_ship( ship, sound_name, loop ){
     var pos = ship.get_position();
     var dir = ship.get_direction();
-    SOUND_MANAGER.play_sound( sound_name, loop, pos.x, pos.y, pos.z );
+    return SOUND_MANAGER.play_sound( sound_name, loop, pos.x, pos.y, pos.z );
 }
 
 function GAME_PAGE_clear_extra_socket_events(){

@@ -81,6 +81,7 @@ var SOUND_MANAGER = new function(){
                     panner.setPosition( x, y, z );
                     
                     oneShotSound.noteOn(this.context.currentTime);
+                    return { sound: oneShotSound, panner: panner };
                 }
                 else{
                     alert( 'Error in play_sound. The sound ' + sound_name + ' was not loaded.' );
@@ -88,7 +89,7 @@ var SOUND_MANAGER = new function(){
             }
             else{
                 alert( 'Error in play_sound. Not all sounds are loaded.' );
-        }
+            }
         }
     }
     
